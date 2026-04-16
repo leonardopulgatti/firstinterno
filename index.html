@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FIRST — Gestão</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  :root{
+    --bg:#08090E;--surface:#0F1018;--surface2:#161720;--border:#ffffff0D;--border2:#ffffff18;
+    --text:#F0F0F8;--text2:#8888AA;--text3:#44445A;
+    --accent:#C9A84C;--accent2:#E8C97A;--blue:#4A8BFF;--green:#3DD68C;--red:#FF5252;--orange:#FF8C42;
+    --font:'Sora',sans-serif;--mono:'DM Mono',monospace;
+  }
+  body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#ffffff18;border-radius:4px}
+  .app{display:flex;flex-direction:column;min-height:100vh;max-width:540px;margin:0 auto}
+  .hdr{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+  .hdr-logo{display:flex;align-items:center;gap:10px}
+  .hdr-mark{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,#C9A84C,#8B6A1F);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#000}
+  .hdr-name{font-weight:700;font-size:16px;letter-spacing:.5px;color:var(--text)}
+  .hdr-sub{font-size:11px;color:var(--text3);font-weight:500;letter-spacing:.05em;margin-top:1px}
+  .badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;letter-spacing:.03em}
+  .badge-admin{background:#C9A84C18;color:var(--accent2);border:1px solid #C9A84C30}
+  .badge-seller{background:#FF8C4218;color:var(--orange);border:1px solid #FF8C4230}
+  .content{flex:1;padding:18px 16px 90px;overflow-y:auto}
+  .bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:540px;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:50;padding-bottom:env(safe-area-inset-bottom)}
+  .bnav-item{flex:1;padding:10px 4px 13px;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;font-family:var(--font)}
+  .bnav-icon{font-size:17px;line-height:1}
+  .bnav-label{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .bnav-item.active .bnav-icon,.bnav-item.active .bnav-label{color:var(--accent2)}
+  .bnav-item:not(.active) .bnav-icon,.bnav-item:not(.active) .bnav-label{color:#333350}
+  .sidebar{display:none}
+  .page-title{display:none}
+  /* ── DESKTOP ── */
+  @media(min-width:768px){
+    body{overflow:hidden;height:100vh}
+    .app{max-width:100%;flex-direction:row;height:100vh;overflow:hidden}
+    .hdr{display:none}
+    .bnav{display:none}
+    .content{padding:28px 32px;overflow-y:auto;height:100vh;flex:1}
+    .sidebar{display:flex;flex-direction:column;width:220px;min-width:220px;background:var(--surface);border-right:1px solid var(--border);height:100vh;position:sticky;top:0;flex-shrink:0}
+    .sidebar-logo{padding:24px 20px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+    .sidebar-mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#C9A84C,#8B6A1F);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;color:#000;flex-shrink:0}
+    .sidebar-name{font-weight:800;font-size:15px;letter-spacing:.3px;color:var(--text)}
+    .sidebar-sub{font-size:10px;color:var(--text3);margin-top:1px;letter-spacing:.04em}
+    .sidebar-nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+    .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;font-family:var(--font);border:1px solid transparent;background:transparent;width:100%;text-align:left;transition:background .12s}
+    .sidebar-item:hover{background:var(--surface2)}
+    .sidebar-item.active{background:#C9A84C12;border-color:#C9A84C22}
+    .sidebar-item.active .si-icon,.sidebar-item.active .si-label{color:var(--accent2)}
+    .sidebar-item:not(.active) .si-icon{color:var(--text3)}
+    .sidebar-item:not(.active) .si-label{color:var(--text2)}
+    .si-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+    .si-label{font-size:13px;font-weight:600}
+    .sidebar-footer{padding:14px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+    .page-title{display:block;font-size:22px;font-weight:800;color:var(--text);letter-spacing:-.4px;margin-bottom:22px}
+    .kpi-grid{grid-template-columns:repeat(4,1fr)}
+    .row-name{max-width:320px}
+    .product-name{max-width:300px}
+    .sheet{max-width:480px;border-radius:16px;align-self:center;margin:auto}
+    .overlay{align-items:center}
+  }
+  @media(min-width:1100px){
+    .sidebar{width:240px;min-width:240px}
+    .content{padding:32px 44px}
+  }
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+  .card-head{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+  .card-head h3{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.02em}
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:15px 16px;position:relative;overflow:hidden}
+  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+  .kpi.blue::before{background:linear-gradient(90deg,var(--blue),transparent)}
+  .kpi.green::before{background:linear-gradient(90deg,var(--green),transparent)}
+  .kpi.amber::before{background:linear-gradient(90deg,var(--accent),transparent)}
+  .kpi.red::before{background:linear-gradient(90deg,var(--red),transparent)}
+  .kpi-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+  .kpi-value{font-size:19px;font-weight:700;font-family:var(--mono);letter-spacing:-0.5px}
+  .kpi.blue .kpi-value{color:var(--blue)}.kpi.green .kpi-value{color:var(--green)}.kpi.amber .kpi-value{color:var(--accent2)}.kpi.red .kpi-value{color:var(--red)}
+  .kpi-sub{font-size:10px;color:var(--text3);margin-top:3px}
+  .row{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;transition:background .1s}
+  .row:last-child{border-bottom:none}.row:active{background:var(--surface2)}
+  .row-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
+  .row-meta{font-size:11px;color:var(--text3)}
+  .row-val{font-size:14px;font-weight:700;font-family:var(--mono);color:var(--text);text-align:right}
+  .row-profit{font-size:11px;font-family:var(--mono);color:var(--green);text-align:right;margin-top:2px}
+  .tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.04em;background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+  .tag-avulso{background:#FF8C4212;color:var(--orange);border-color:#FF8C4230}
+  .alert{background:#C9A84C10;border:1px solid #C9A84C25;border-radius:12px;padding:12px 15px;margin-bottom:14px}
+  .alert-title{font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:7px}
+  .alert-chips{display:flex;flex-wrap:wrap;gap:6px}
+  .alert-chip{background:#C9A84C18;color:var(--accent);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600}
+  .form-group{display:flex;flex-direction:column;gap:13px}
+  .field-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+  .inp{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:11px 13px;font-size:14px;font-family:var(--font);color:var(--text);outline:none;transition:border-color .15s}
+  .inp:focus{border-color:var(--accent)}.inp::placeholder{color:var(--text3)}
+  select.inp{cursor:pointer}select.inp option{background:#1A1A2E;color:var(--text)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pills{display:flex;flex-wrap:wrap;gap:6px}
+  .pill{padding:5px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--border2);background:transparent;color:var(--text2);transition:all .15s}
+  .pill.active{background:var(--accent);color:#000;border-color:var(--accent)}
+  .btn-primary{width:100%;background:linear-gradient(135deg,#C9A84C,#8B6A1F);color:#000;border:none;border-radius:11px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);letter-spacing:.02em}
+  .btn-primary:disabled{opacity:.3;cursor:not-allowed}
+  .btn-danger{background:transparent;border:1px solid #FF525230;border-radius:10px;width:100%;padding:12px;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)}
+  .tipo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .tipo-btn{padding:12px;border-radius:11px;font-family:var(--font);cursor:pointer;font-weight:700;font-size:13px;border:1.5px solid var(--border2);background:transparent;color:var(--text2);transition:all .15s}
+  .tipo-btn.active-stock{background:#4A8BFF15;color:var(--blue);border-color:#4A8BFF40}
+  .tipo-btn.active-avulso{background:#FF8C4215;color:var(--orange);border-color:#FF8C4240}
+  .product-row{padding:13px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:background .1s}
+  .product-row:last-child{border-bottom:none}.product-row:active{background:var(--surface2)}
+  .product-brand{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+  .product-name{font-size:13px;font-weight:600;color:var(--text);overflow:visible;text-overflow:unset;white-space:normal;max-width:none}
+  .product-meta{font-size:11px;color:var(--text3);margin-top:3px}
+  .stock-badge{font-size:11px;font-weight:700;font-family:var(--mono);padding:3px 9px;border-radius:20px}
+  .stock-ok{background:#3DD68C15;color:var(--green);border:1px solid #3DD68C30}
+  .stock-low{background:#FF525215;color:var(--red);border:1px solid #FF525230}
+  .total-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .total-line{display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:6px}
+  .total-main{display:flex;justify-content:space-between;font-size:21px;font-weight:700;border-top:1px solid var(--border);padding-top:12px;margin-top:8px}
+  .total-profit{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:5px}
+  .dre-header{background:linear-gradient(135deg,var(--surface2),#0A0A14);padding:16px;border-bottom:1px solid var(--border)}
+  .dre-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+  .dre-label{font-size:13px;color:var(--text2)}.dre-label.bold{color:var(--text);font-weight:700}.dre-label.indent{padding-left:14px;color:var(--text3);font-size:12px}
+  .dre-val{font-size:13px;font-family:var(--mono);font-weight:500;color:var(--text)}.dre-val.bold{font-size:15px;font-weight:700}.dre-val.red{color:var(--red)}
+  .dre-block{background:var(--surface2);border:1px solid var(--border);margin:4px 10px;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+  .dre-section{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;padding:10px 16px 4px}
+  .dre-stats{border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(3,1fr);padding:14px 0}
+  .dre-stat{text-align:center;border-right:1px solid var(--border)}.dre-stat:last-child{border-right:none}
+  .dre-stat-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+  .dre-stat-val{font-size:17px;font-weight:700;font-family:var(--mono);color:var(--text)}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center;z-index:100;backdrop-filter:blur(4px)}
+  .sheet{background:var(--surface);border:1px solid var(--border);border-radius:20px 20px 0 0;width:100%;max-width:540px;padding:24px;padding-bottom:36px;max-height:92vh;overflow-y:auto}
+  .sheet-title{font-size:17px;font-weight:700;color:var(--text);margin-bottom:18px;letter-spacing:-.3px}
+  .margin-preview{background:var(--surface2);border:1px solid #3DD68C20;border-radius:9px;padding:10px 13px;display:flex;gap:20px;font-size:12px}
+  .margin-preview span{color:var(--green)}.margin-preview strong{font-family:var(--mono)}
+  .autocomplete{position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border2);border-radius:11px;z-index:10;box-shadow:0 12px 40px rgba(0,0,0,.6);margin-top:4px;overflow:hidden}
+  .ac-item{width:100%;text-align:left;padding:12px 14px;font-size:13px;cursor:pointer;background:none;border:none;border-bottom:1px solid var(--border);font-family:var(--font);color:var(--text);display:flex;justify-content:space-between;align-items:center}
+  .ac-item:last-child{border-bottom:none}.ac-item:active{background:var(--surface2)}
+  .ac-item-meta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+  .sel-prod{background:#4A8BFF10;border:1px solid #4A8BFF25;border-radius:9px;padding:9px 13px;margin-top:6px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7EB3FF}
+  .brand-bar{margin-bottom:10px}
+  .brand-bar-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+  .brand-bar-bg{background:var(--surface2);border-radius:4px;height:4px;overflow:hidden}
+  .brand-bar-fill{height:100%;border-radius:4px;transition:width .4s ease}
+  .login{min-height:100vh;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;font-family:var(--font)}
+  .login-logo{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#C9A84C,#8B6A1F);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:28px;color:#000;margin-bottom:20px;box-shadow:0 8px 32px #C9A84C30}
+  .login-title{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-.5px;margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--text3);margin-bottom:36px}
+  .login-option{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;text-align:left;font-family:var(--font);margin-bottom:10px}
+  .login-option:hover{border-color:var(--border2)}
+  .login-option-title{font-weight:700;font-size:15px;color:var(--text);margin-bottom:3px}
+  .login-option-sub{font-size:12px;color:var(--text3)}
+  .login-divider{font-size:11px;color:var(--text3);margin:4px 0 12px;text-align:center;width:100%;max-width:340px}
+  .login-pin-box{width:100%;max-width:340px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px}
+  .pin-title{font-weight:700;font-size:15px;color:var(--text);margin-bottom:14px}
+  .pin-hint{font-size:11px;color:var(--text3);text-align:center;margin-top:8px}
+  .err-msg{font-size:12px;color:var(--red);font-weight:600;margin-bottom:6px}
+  .empty{text-align:center;padding:44px 20px;color:var(--text3)}
+  .empty-icon{font-size:34px;margin-bottom:10px;opacity:.5}.empty-text{font-size:13px}
+  .info-box{border-radius:10px;padding:10px 13px;font-size:12px;font-weight:500}
+  .info-blue{background:#4A8BFF10;border:1px solid #4A8BFF25;color:#7EB3FF}
+  .info-orange{background:#FF8C4210;border:1px solid #FF8C4225;color:var(--orange)}
+  .success-bar{background:#3DD68C12;border:1px solid #3DD68C30;border-radius:11px;padding:12px 16px;font-size:13px;font-weight:700;color:var(--green);margin-bottom:14px}
+  .config-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:12px}
+  .config-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px}
+  .config-sub{font-size:12px;color:var(--text3);line-height:1.6}
+  .syncing{position:fixed;top:60px;right:14px;background:var(--surface2);border:1px solid var(--border2);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--text3);z-index:99;display:flex;align-items:center;gap:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{width:10px;height:10px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const {useState,useEffect,useCallback}=React;
+
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL="https://tvifqqrhjaobahgwyvci.supabase.co";
+const SUPABASE_KEY="sb_publishable_7r-yM1vsRXnjpOwIUS9XTQ_SBXI-yEi";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// helpers: converte snake_case do banco para camelCase do app e vice-versa
+const fromDB={
+  product:r=>({id:r.id,name:r.name,brand:r.brand,costPrice:r.cost_price,salePrice:r.sale_price,stock:r.stock,minStock:r.min_stock,batteryHealth:r.battery_health||null,color:r.color||"",originalBox:r.original_box||false,condition:r.condition||""}),
+  sale:r=>({id:r.id,date:r.date,productId:r.product_id,productName:r.product_name,brand:r.brand,quantity:r.quantity,unitPrice:r.unit_price,costPrice:r.cost_price,discount:r.discount,total:r.total,paymentMethod:r.payment_method,seller:r.seller,avulso:r.avulso,tradeModel:r.trade_model||"",tradeValue:r.trade_value||0,signalValue:r.signal_value||0,remaining:r.remaining||0,deliveryType:r.delivery_type||"Retirada",items:r.items||null,customerName:r.customer_name||"",customerCpf:r.customer_cpf||"",customerBirth:r.customer_birth||"",customerAddress:r.customer_address||"",customerCep:r.customer_cep||"",customerNumber:r.customer_number||"",customerComplement:r.customer_complement||"",customerPhone:r.customer_phone||"",customerEmail:r.customer_email||"",customerType:r.customer_type||""}),
+  expense:r=>({id:r.id,date:r.date,description:r.description,category:r.category,value:r.value}),
+};
+const toDB={
+  product:p=>({id:p.id,name:p.name,brand:p.brand,cost_price:p.costPrice,sale_price:p.salePrice,stock:p.stock,min_stock:p.minStock,battery_health:p.batteryHealth||null,color:p.color||"",original_box:p.originalBox||false,condition:p.condition||""}),
+  sale:s=>({id:s.id,date:s.date,product_id:s.productId,product_name:s.productName,brand:s.brand,quantity:s.quantity,unit_price:s.unitPrice,cost_price:s.costPrice,discount:s.discount,total:s.total,payment_method:s.paymentMethod,seller:s.seller,avulso:s.avulso,trade_model:s.tradeModel||"",trade_value:s.tradeValue||0,signal_value:s.signalValue||0,remaining:s.remaining||0,delivery_type:s.deliveryType||"Retirada",items:s.items||null,customer_name:s.customerName||"",customer_cpf:s.customerCpf||"",customer_birth:s.customerBirth||"",customer_address:s.customerAddress||"",customer_cep:s.customerCep||"",customer_number:s.customerNumber||"",customer_complement:s.customerComplement||"",customer_phone:s.customerPhone||"",customer_email:s.customerEmail||"",customer_type:s.customerType||""}),
+  expense:e=>({id:e.id,date:e.date,description:e.description,category:e.category,value:e.value}),
+};
+
+const BRANDS=["Apple","Garmin","JBL","DJI","Acessórios"];
+const PAYMENTS=["Dinheiro","Pix","Débito","Créd. 1x","Créd. 2x","Créd. 3x","Créd. 4x","Créd. 6x","Créd. 10x","Créd. 12x"];
+const EXP_CATS=["Aluguel","Salários","Marketing","Energia/Internet","Sistemas","Frete","Impostos","Outros"];
+const BRAND_COLORS={Apple:"#A8A8B3",Garmin:"#4A8BFF",JBL:"#FF5252","DJI":"#8888AA","Acessórios":"#A78BFA"};
+const DEFAULT_PIN="1234";
+const R=v=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v||0);
+const Dt=iso=>iso?new Date(iso+"T12:00:00").toLocaleDateString("pt-BR"):"";
+const today=()=>new Date().toISOString().split("T")[0];
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const nowMonth=()=>{const d=new Date();return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`};
+
+// ── UI Atoms ──────────────────────────────────────────────────────────────────
+const Inp=({label,...p})=>React.createElement("div",null,label&&React.createElement("div",{className:"field-label"},label),React.createElement("input",{...p,className:"inp"}));
+const Sel=({label,children,...p})=>React.createElement("div",null,label&&React.createElement("div",{className:"field-label"},label),React.createElement("select",{...p,className:"inp"},children));
+const Sheet=({children,onClose})=>React.createElement("div",{className:"overlay",onClick:e=>e.target===e.currentTarget&&onClose()},React.createElement("div",{className:"sheet"},children));
+const Empty=({icon,text})=>React.createElement("div",{className:"empty"},React.createElement("div",{className:"empty-icon"},icon),React.createElement("div",{className:"empty-text"},text));
+const Syncing=()=>React.createElement("div",{className:"syncing"},React.createElement("div",{className:"spinner"}),React.createElement("span",null,"Salvando..."));
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
+function Login({onAdmin,onSeller,storedPin}){
+  const[pin,setPin]=useState("");const[err,setErr]=useState(false);
+  const tryPin=()=>{if(pin===(storedPin||DEFAULT_PIN)){onAdmin();}else{setErr(true);setPin("");setTimeout(()=>setErr(false),1600);}};
+  return React.createElement("div",{className:"login"},
+    React.createElement("div",{className:"login-logo"},"F"),
+    React.createElement("div",{className:"login-title"},"FIRST"),
+    React.createElement("div",{className:"login-sub"},"Sistema de Gestão"),
+    React.createElement("button",{className:"login-option",onClick:onSeller},
+      React.createElement("div",{className:"login-option-title"},"🛍️  Entrar como Vendedor"),
+      React.createElement("div",{className:"login-option-sub"},"Ver estoque · Registrar vendas")
+    ),
+    React.createElement("div",{className:"login-divider"},"— ou —"),
+    React.createElement("div",{className:"login-pin-box"},
+      React.createElement("div",{className:"pin-title"},"🔐  Acesso Admin"),
+      err&&React.createElement("div",{className:"err-msg"},"PIN incorreto."),
+      React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:10}},
+        React.createElement("input",{className:"inp",type:"password",inputMode:"numeric",maxLength:8,value:pin,placeholder:"••••",onChange:e=>setPin(e.target.value),onKeyDown:e=>e.key==="Enter"&&tryPin()}),
+        React.createElement("button",{className:"btn-primary",onClick:tryPin,disabled:!pin},"Entrar")
+      ),
+      React.createElement("div",{className:"pin-hint"},"PIN padrão: "+DEFAULT_PIN+" · Mude em Configurações")
+    )
+  );
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function Dashboard({products,sales,expenses,setTab}){
+  const m=nowMonth(),mS=sales.filter(s=>s.date.startsWith(m));
+  const receita=mS.reduce((a,s)=>a+s.total,0),cmv=mS.reduce((a,s)=>a+s.costPrice*s.quantity,0),lb=receita-cmv;
+  const desp=expenses.filter(e=>e.date.startsWith(m)).reduce((a,e)=>a+e.value,0),ll=lb-desp;
+  const lowStock=products.filter(p=>p.stock<=(p.minStock||2));
+  const totalEstoqueVenda=products.reduce((a,p)=>a+p.salePrice*p.stock,0);
+  const totalEstoqueCusto=products.reduce((a,p)=>a+p.costPrice*p.stock,0);
+  return React.createElement("div",null,
+    React.createElement("div",{className:"kpi-grid"},
+      React.createElement("div",{className:"kpi blue"},React.createElement("div",{className:"kpi-label"},"Receita do Mês"),React.createElement("div",{className:"kpi-value"},R(receita)),React.createElement("div",{className:"kpi-sub"},mS.length+" venda"+(mS.length!==1?"s":""))),
+      React.createElement("div",{className:"kpi green"},React.createElement("div",{className:"kpi-label"},"Lucro Bruto"),React.createElement("div",{className:"kpi-value"},R(lb)),React.createElement("div",{className:"kpi-sub"},receita>0?"Margem "+(lb/receita*100).toFixed(1)+"%":"—")),
+      React.createElement("div",{className:"kpi amber"},React.createElement("div",{className:"kpi-label"},"Despesas"),React.createElement("div",{className:"kpi-value"},R(desp))),
+      React.createElement("div",{className:`kpi ${ll>=0?"green":"red"}`},React.createElement("div",{className:"kpi-label"},"Lucro Líquido"),React.createElement("div",{className:"kpi-value"},R(ll)),React.createElement("div",{className:"kpi-sub"},receita>0?"Margem "+(ll/receita*100).toFixed(1)+"%":"—"))
+    ),
+    React.createElement("div",{style:{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:13,padding:"14px 16px",marginBottom:14}},
+      React.createElement("div",{style:{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}},"Estoque em Loja"),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}},
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginBottom:3}},"Valor a Custo"),
+          React.createElement("div",{style:{fontSize:17,fontWeight:700,fontFamily:"var(--mono)",color:"var(--text3)"}},R(totalEstoqueCusto))
+        ),
+        React.createElement("div",null,
+          React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginBottom:3}},"Valor de Venda"),
+          React.createElement("div",{style:{fontSize:17,fontWeight:700,fontFamily:"var(--mono)",color:"var(--accent2)"}},R(totalEstoqueVenda))
+        )
+      ),
+      React.createElement("div",{style:{borderTop:"1px solid var(--border)",paddingTop:12,display:"flex",flexDirection:"column",gap:8}},
+        BRANDS.map(b=>{
+          const venda=products.filter(p=>p.brand===b).reduce((a,p)=>a+p.salePrice*p.stock,0);
+          const custo=products.filter(p=>p.brand===b).reduce((a,p)=>a+p.costPrice*p.stock,0);
+          const itens=products.filter(p=>p.brand===b).reduce((a,p)=>a+p.stock,0);
+          if(itens===0)return null;
+          return React.createElement("div",{key:b},
+            React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}},
+              React.createElement("span",{style:{fontSize:12,fontWeight:700,color:BRAND_COLORS[b]||"#888"}},b),
+              React.createElement("div",{style:{textAlign:"right"}},
+                React.createElement("span",{style:{fontSize:13,fontWeight:700,fontFamily:"var(--mono)",color:"var(--text)"}},R(venda)),
+                React.createElement("span",{style:{fontSize:10,color:"var(--text3)",marginLeft:6}},"(custo "+R(custo)+") · "+itens+" un.")
+              )
+            ),
+            React.createElement("div",{style:{background:"var(--surface2)",borderRadius:4,height:3,overflow:"hidden"}},
+              React.createElement("div",{style:{background:BRAND_COLORS[b]||"var(--accent)",height:"100%",width:(totalEstoqueVenda>0?venda/totalEstoqueVenda*100:0)+"%",borderRadius:4}})
+            )
+          );
+        })
+      ),
+      React.createElement("div",{style:{marginTop:12,paddingTop:10,borderTop:"1px solid var(--border)",fontSize:11,color:"var(--text3)"}},"Lucro potencial: ",React.createElement("strong",{style:{color:"var(--green)",fontFamily:"var(--mono)"}},R(totalEstoqueVenda-totalEstoqueCusto))," · ",products.reduce((a,p)=>a+p.stock,0)," unidades")
+    ),
+
+    React.createElement("div",{className:"card"},
+      React.createElement("div",{className:"card-head"},
+        React.createElement("h3",null,"Últimas Vendas"),
+        React.createElement("button",{onClick:()=>setTab("historico"),style:{fontSize:12,color:"var(--accent2)",background:"none",border:"none",cursor:"pointer",fontFamily:"var(--font)",fontWeight:600}},"Ver todas →")
+      ),
+      sales.length===0?React.createElement(Empty,{icon:"🛍️",text:"Nenhuma venda ainda"}):
+      React.createElement("div",null,[...sales].reverse().slice(0,5).map(s=>
+        React.createElement("div",{key:s.id,className:"row"},
+          React.createElement("div",{style:{flex:1,minWidth:0}},
+            React.createElement("div",{className:"row-name"},s.productName,s.avulso&&React.createElement("span",{className:"tag tag-avulso",style:{marginLeft:6}},"avulso")),
+            React.createElement("div",{className:"row-meta"},Dt(s.date)+" · "+s.paymentMethod+" · "+s.quantity+" un."+(s.seller&&s.seller!=="—"?" · "+s.seller:""))
+          ),
+          React.createElement("div",null,React.createElement("div",{className:"row-val"},R(s.total)),React.createElement("div",{className:"row-profit"},"+"+R(s.total-s.costPrice*s.quantity)))
+        )
+      ))
+    )
+  );
+}
+
+// ── ESTOQUE ───────────────────────────────────────────────────────────────────
+function Estoque({products,onSave,onDelete,isAdmin,syncing}){
+  const[brand,setBrand]=useState("Todas");const[sort,setSort]=useState("name");const[show,setShow]=useState(false);const[editing,setEditing]=useState(null);
+  const f0={name:"",brand:"Apple",costPrice:"",salePrice:"",stock:"",minStock:"2",batteryHealth:"",color:"",originalBox:false,condition:""};const[form,setForm]=useState(f0);
+  const base=brand==="Todas"?products:products.filter(p=>p.brand===brand);
+  const list=[...base].sort((a,b)=>sort==="name"?a.name.localeCompare(b.name):sort==="price_asc"?a.salePrice-b.salePrice:sort==="price_desc"?b.salePrice-a.salePrice:sort==="cost_asc"?a.costPrice-b.costPrice:b.costPrice-a.costPrice);
+  const mg=p=>p.salePrice>0?((p.salePrice-p.costPrice)/p.salePrice*100):0;
+  const openEdit=p=>{if(!isAdmin)return;setForm({...p,costPrice:String(p.costPrice),salePrice:String(p.salePrice),stock:String(p.stock),minStock:String(p.minStock||2),batteryHealth:p.batteryHealth!=null?String(p.batteryHealth):"",color:p.color||"",originalBox:p.originalBox||false,condition:p.condition||""});setEditing(p.id);setShow(true);};
+  const save=async()=>{
+    if(!form.name||!form.costPrice||!form.salePrice||form.stock==="")return;
+    const pr={id:editing||uid(),name:form.name,brand:form.brand,costPrice:+form.costPrice,salePrice:+form.salePrice,stock:+form.stock,minStock:+form.minStock||2,batteryHealth:form.brand==="Apple"&&form.batteryHealth!==""?+form.batteryHealth:null,color:form.color||"",originalBox:form.brand==="Apple"?form.originalBox:false,condition:form.brand==="Garmin"?form.condition:""};
+    await onSave(pr);setShow(false);
+  };
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8,flexWrap:"wrap"}},
+      React.createElement("div",{className:"pills"},["Todas",...BRANDS].map(b=>React.createElement("button",{key:b,className:"pill"+(brand===b?" active":""),onClick:()=>setBrand(b)},b))),
+      isAdmin&&React.createElement("button",{onClick:()=>{setForm(f0);setEditing(null);setShow(true);},style:{background:"linear-gradient(135deg,#C9A84C,#8B6A1F)",color:"#000",border:"none",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"var(--font)",flexShrink:0}},"+ Produto")
+    ),
+    React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:12}},
+      React.createElement("span",{style:{fontSize:11,color:"var(--text3)",fontWeight:600,textTransform:"uppercase",letterSpacing:".05em",flexShrink:0}},"Ordenar:"),
+      React.createElement("div",{className:"pills"},
+        [{v:"name",l:"A–Z"},{v:"price_desc",l:"Venda ↓"},{v:"price_asc",l:"Venda ↑"},{v:"cost_desc",l:"Custo ↓"},{v:"cost_asc",l:"Custo ↑"}].map(o=>React.createElement("button",{key:o.v,className:"pill"+(sort===o.v?" active":""),onClick:()=>setSort(o.v)},o.l))
+      )
+    ),
+    !isAdmin&&React.createElement("div",{className:"info-box info-blue",style:{marginBottom:10}},"👁  Modo leitura — somente admin pode editar o estoque"),
+    React.createElement("div",{className:"card"},
+      list.length===0?React.createElement(Empty,{icon:"📦",text:"Nenhum produto cadastrado"}):
+      React.createElement("div",null,list.map(p=>{
+        const low=p.stock<=(p.minStock||2);
+        return React.createElement("div",{key:p.id,className:"product-row",onClick:()=>openEdit(p)},
+          React.createElement("div",{style:{flex:1,minWidth:0}},
+            React.createElement("div",{className:"product-brand",style:{color:BRAND_COLORS[p.brand]||"#8888AA"}},p.brand),
+            React.createElement("div",{className:"product-name"},p.name),
+            React.createElement("div",{className:"product-meta"},
+              React.createElement("span",{style:{color:"var(--text3)"}},R(p.costPrice)),
+              React.createElement("span",{style:{color:"var(--text3)",margin:"0 5px"}},"→"),
+              React.createElement("span",{style:{color:"var(--accent2)",fontWeight:600}},R(p.salePrice)),
+              React.createElement("span",{style:{color:"var(--text3)",margin:"0 6px"}},"·"),
+              React.createElement("span",{style:{color:mg(p)>=20?"var(--green)":"var(--orange)",fontWeight:700}},mg(p).toFixed(1)+"% margem")
+            ),
+            p.brand==="Apple"&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:5,marginTop:5}},
+              p.color&&React.createElement("span",{className:"tag"},p.color),
+              p.batteryHealth!=null&&React.createElement("span",{className:"tag",style:{color:p.batteryHealth>=85?"var(--green)":p.batteryHealth>=75?"var(--orange)":"var(--red)",borderColor:p.batteryHealth>=85?"#3DD68C30":p.batteryHealth>=75?"#FF8C4230":"#FF525230"}},p.batteryHealth+"% bateria"),
+              React.createElement("span",{className:"tag",style:p.originalBox?{color:"var(--green)",borderColor:"#3DD68C30"}:{color:"var(--text3)"}},p.originalBox?"✓ Caixa original":"Sem caixa")
+            ),
+            p.brand!=="Apple"&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:5,marginTop:5}},
+              p.color&&React.createElement("span",{className:"tag"},p.color),
+              p.brand==="Garmin"&&p.condition&&React.createElement("span",{className:"tag",style:p.condition==="Novo"?{color:"var(--green)",borderColor:"#3DD68C30",background:"#3DD68C10"}:{color:"var(--orange)",borderColor:"#FF8C4230",background:"#FF8C4210"}},p.condition==="Novo"?"✦ Novo":"◈ Seminovo")
+            )
+          ),
+          React.createElement("div",{style:{textAlign:"right",marginLeft:12}},
+            React.createElement("span",{className:"stock-badge "+(low?"stock-low":"stock-ok")},p.stock+" un.")
+          )
+        );
+      }))
+    ),
+    show&&React.createElement(Sheet,{onClose:()=>setShow(false)},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        React.createElement("div",{className:"sheet-title"},editing?"Editar Produto":"Novo Produto"),
+        editing&&React.createElement("button",{onClick:async()=>{await onDelete("products",editing);setShow(false);},style:{color:"var(--red)",background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"var(--font)"}},"Remover")
+      ),
+      React.createElement("div",{className:"form-group"},
+        React.createElement(Inp,{label:"Nome do Produto",value:form.name,onChange:e=>setForm({...form,name:e.target.value}),placeholder:"Ex: iPhone 16 128GB Preto"}),
+        React.createElement(Sel,{label:"Marca",value:form.brand,onChange:e=>setForm({...form,brand:e.target.value})},BRANDS.map(b=>React.createElement("option",{key:b},b))),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Custo (R$)",type:"number",value:form.costPrice,onChange:e=>setForm({...form,costPrice:e.target.value}),placeholder:"0,00"}),
+          React.createElement(Inp,{label:"Venda (R$)",type:"number",value:form.salePrice,onChange:e=>setForm({...form,salePrice:e.target.value}),placeholder:"0,00"})
+        ),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Qtd Estoque",type:"number",value:form.stock,onChange:e=>setForm({...form,stock:e.target.value}),placeholder:"0"}),
+          React.createElement(Inp,{label:"Estoque Mín.",type:"number",value:form.minStock,onChange:e=>setForm({...form,minStock:e.target.value}),placeholder:"2"})
+        ),
+        React.createElement(Inp,{label:"Cor",value:form.color,onChange:e=>setForm({...form,color:e.target.value}),placeholder:"Ex: Preto, Azul, Grafite..."}),
+        form.brand==="Apple"&&React.createElement("div",{className:"form-group"},
+          React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--accent2)",textTransform:"uppercase",letterSpacing:".07em",padding:"4px 0",borderBottom:"1px solid var(--border)",marginBottom:2}},"Campos Apple"),
+          React.createElement(Inp,{label:"Saúde da Bateria (%)",type:"number",min:"0",max:"100",value:form.batteryHealth,onChange:e=>setForm({...form,batteryHealth:e.target.value}),placeholder:"Ex: 89"}),
+          React.createElement("label",{style:{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"10px 13px",background:"var(--surface2)",borderRadius:10,border:"1px solid var(--border2)"}},
+            React.createElement("input",{type:"checkbox",checked:form.originalBox,onChange:e=>setForm({...form,originalBox:e.target.checked}),style:{width:16,height:16,accentColor:"var(--accent)",cursor:"pointer"}}),
+            React.createElement("span",{style:{fontSize:13,color:"var(--text)",fontWeight:500}},"Acompanha caixa original"),
+            form.originalBox&&React.createElement("span",{style:{marginLeft:"auto",fontSize:11,color:"var(--green)",fontWeight:700}},"✓ Sim")
+          )
+        ),
+        form.brand==="Garmin"&&React.createElement("div",{className:"form-group"},
+          React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"#4A8BFF",textTransform:"uppercase",letterSpacing:".07em",padding:"4px 0",borderBottom:"1px solid var(--border)",marginBottom:2}},"Campos Garmin"),
+          React.createElement("div",null,
+            React.createElement("div",{className:"field-label"},"Condição"),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+              React.createElement("button",{className:"tipo-btn"+(form.condition==="Novo"?" active-stock":""),onClick:()=>setForm({...form,condition:"Novo"}),type:"button"},"✦  Novo"),
+              React.createElement("button",{className:"tipo-btn"+(form.condition==="Seminovo"?" active-avulso":""),onClick:()=>setForm({...form,condition:"Seminovo"}),type:"button"},"◈  Seminovo")
+            )
+          )
+        ),
+        form.costPrice&&form.salePrice&&+form.salePrice>0&&React.createElement("div",{className:"margin-preview"},
+          React.createElement("span",null,"Margem: ",React.createElement("strong",null,((+form.salePrice-+form.costPrice)/+form.salePrice*100).toFixed(1)+"%")),
+          React.createElement("span",null,"Lucro un.: ",React.createElement("strong",null,R(+form.salePrice-+form.costPrice)))
+        ),
+        React.createElement("button",{className:"btn-primary",onClick:save,disabled:syncing},"Salvar Produto")
+      )
+    )
+  );
+}
+
+// ── NOVA VENDA ────────────────────────────────────────────────────────────────
+function NovaVenda({products,onSaveSale,onUpdateStock,syncing}){
+  // ── estado do item sendo adicionado
+  const[tipo,setTipo]=useState("estoque");
+  const[search,setSearch]=useState("");const[selId,setSelId]=useState("");
+  const[avName,setAvName]=useState("");const[avBrand,setAvBrand]=useState("Apple");
+  const[avCost,setAvCost]=useState("");const[avSale,setAvSale]=useState("");
+  const[qty,setQty]=useState("1");const[disc,setDisc]=useState("0");
+
+  // ── carrinho de itens
+  const[cart,setCart]=useState([]);
+
+  // ── dados da venda
+  const[payment,setPayment]=useState("Pix");const[seller,setSeller]=useState("");
+  const[hasTrade,setHasTrade]=useState(false);const[tradeModel,setTradeModel]=useState("");const[tradeValue,setTradeValue]=useState("0");
+  const[signalValue,setSignalValue]=useState("0");const[deliveryType,setDeliveryType]=useState("Retirada");
+  const[done,setDone]=useState(false);
+  // cliente
+  const[customerName,setCustomerName]=useState("");const[customerCpf,setCustomerCpf]=useState("");
+  const[customerBirth,setCustomerBirth]=useState("");const[customerAddress,setCustomerAddress]=useState("");
+  const[customerCep,setCustomerCep]=useState("");const[customerNumber,setCustomerNumber]=useState("");
+  const[customerComplement,setCustomerComplement]=useState("");const[customerPhone,setCustomerPhone]=useState("");
+  const[customerEmail,setCustomerEmail]=useState("");const[customerType,setCustomerType]=useState("");
+
+  const prod=products.find(p=>p.id===selId);
+  const q=Math.max(1,+qty||1);const d=+disc||0;
+  const unitPrice=tipo==="estoque"?(prod?.salePrice||0):(+avSale||0);
+  const costPrice=tipo==="estoque"?(prod?.costPrice||0):(+avCost||0);
+  const itemSubtotal=Math.max(0,unitPrice*q-d);
+  const avail=products.filter(p=>p.stock>0&&p.name.toLowerCase().includes(search.toLowerCase())&&!selId);
+
+  const canAdd=tipo==="estoque"
+    ?(prod&&q>0&&selId&&q<=(prod?.stock||0))
+    :(avName&&avSale&&q>0);
+
+  const addItem=()=>{
+    if(!canAdd)return;
+    const item={
+      id:uid(),tipo,
+      productId:tipo==="estoque"?prod.id:null,
+      productName:tipo==="estoque"?prod.name:avName,
+      brand:tipo==="estoque"?prod.brand:avBrand,
+      quantity:q,unitPrice,costPrice,discount:d,
+      subtotal:itemSubtotal,avulso:tipo==="avulso",
+    };
+    setCart(c=>[...c,item]);
+    setSearch("");setSelId("");setQty("1");setDisc("0");
+    setAvName("");setAvCost("");setAvSale("");setTipo("estoque");
+  };
+
+  const removeItem=id=>setCart(c=>c.filter(x=>x.id!==id));
+
+  // totais do carrinho
+  const cartSubtotal=cart.reduce((a,i)=>a+i.subtotal,0);
+  const tv=hasTrade?(+tradeValue||0):0;
+  const total=Math.max(0,cartSubtotal-tv);
+  const sv=+signalValue||0;
+  const remaining=Math.max(0,total-sv);
+  const totalCost=cart.reduce((a,i)=>a+i.costPrice*i.quantity,0);
+  const profit=total+tv-totalCost;
+
+  const register=async()=>{
+    if(cart.length===0)return;
+    const firstName=cart[0].productName;
+    const firstBrand=cart[0].brand;
+    const sale={
+      id:uid(),date:today(),
+      productId:cart[0].productId,productName:firstName,brand:firstBrand,
+      quantity:cart.reduce((a,i)=>a+i.quantity,0),
+      unitPrice:cart[0].unitPrice,costPrice:cart[0].costPrice,
+      discount:cart[0].discount,total,
+      paymentMethod:payment,seller:seller||"—",avulso:cart[0].avulso,
+      tradeModel:hasTrade?tradeModel:"",tradeValue:tv,
+      signalValue:sv,remaining,deliveryType,
+      items:cart,
+      customerName,customerCpf,customerBirth,customerAddress,
+      customerCep,customerNumber,customerComplement,customerPhone,customerEmail,customerType,
+    };
+    await onSaveSale(sale);
+    for(const item of cart){
+      if(!item.avulso&&item.productId){
+        const p=products.find(x=>x.id===item.productId);
+        if(p)await onUpdateStock(p.id,p.stock-item.quantity);
+      }
+    }
+    setCart([]);setPayment("Pix");setSeller("");
+    setHasTrade(false);setTradeModel("");setTradeValue("0");setSignalValue("0");setDeliveryType("Retirada");
+    setCustomerName("");setCustomerCpf("");setCustomerBirth("");setCustomerAddress("");
+    setCustomerCep("");setCustomerNumber("");setCustomerComplement("");setCustomerPhone("");setCustomerEmail("");setCustomerType("");
+    setDone(true);setTimeout(()=>setDone(false),3000);
+  };
+
+  return React.createElement("div",null,
+    done&&React.createElement("div",{className:"success-bar"},"✓  Venda registrada com sucesso!"),
+
+    /* ── CARRINHO ── */
+    cart.length>0&&React.createElement("div",{style:{marginBottom:14}},
+      React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}},
+        "Itens da venda ("+cart.length+")"
+      ),
+      React.createElement("div",{className:"card"},
+        cart.map((item,i)=>React.createElement("div",{key:item.id,style:{padding:"11px 14px",borderBottom:i<cart.length-1?"1px solid var(--border)":"none",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+          React.createElement("div",{style:{flex:1,minWidth:0}},
+            React.createElement("div",{style:{fontSize:13,fontWeight:600,color:"var(--text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:200}},item.productName),
+            React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginTop:2}},
+              item.brand+" · "+item.quantity+" un. · "+R(item.unitPrice),
+              item.discount>0?" · desc. "+R(item.discount):"",
+              item.avulso?React.createElement("span",{className:"tag tag-avulso",style:{marginLeft:5}},"avulso"):null
+            )
+          ),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:12}},
+            React.createElement("span",{style:{fontFamily:"var(--mono)",fontWeight:700,fontSize:13,color:"var(--accent2)"}},R(item.subtotal)),
+            React.createElement("button",{onClick:()=>removeItem(item.id),style:{color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"0 2px"}},"×")
+          )
+        ))
+      )
+    ),
+
+    /* ── ADICIONAR PRODUTO ── */
+    React.createElement("div",{className:"card",style:{padding:16,marginBottom:14}},
+      React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"var(--accent2)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}},
+        cart.length===0?"Produto":"+ Adicionar produto"
+      ),
+      React.createElement("div",{className:"form-group"},
+        React.createElement("div",null,
+          React.createElement("div",{className:"field-label"},"Tipo"),
+          React.createElement("div",{className:"tipo-grid"},
+            React.createElement("button",{className:"tipo-btn"+(tipo==="estoque"?" active-stock":""),onClick:()=>setTipo("estoque")},"📦  Do Estoque"),
+            React.createElement("button",{className:"tipo-btn"+(tipo==="avulso"?" active-avulso":""),onClick:()=>setTipo("avulso")},"✏️  Avulso")
+          )
+        ),
+        tipo==="estoque"&&React.createElement("div",{style:{position:"relative"}},
+          React.createElement("div",{className:"field-label"},"Produto"),
+          React.createElement("input",{className:"inp",value:search,onChange:e=>{setSearch(e.target.value);setSelId("");},placeholder:"Buscar no estoque..."}),
+          search&&!selId&&avail.length>0&&React.createElement("div",{className:"autocomplete"},
+            avail.slice(0,6).map(p=>React.createElement("button",{key:p.id,className:"ac-item",onClick:()=>{setSelId(p.id);setSearch(p.name);}},
+              React.createElement("span",null,React.createElement("strong",null,p.name)," ",React.createElement("span",{style:{color:"var(--text3)",fontSize:11}},p.brand)),
+              React.createElement("span",{className:"ac-item-meta"},R(p.salePrice)+" · "+p.stock+" un.")
+            ))
+          ),
+          prod&&React.createElement("div",{className:"sel-prod"},
+            React.createElement("span",null,React.createElement("strong",null,prod.brand)," · "+prod.stock+" un. em estoque"),
+            React.createElement("button",{onClick:()=>{setSearch("");setSelId("");},style:{background:"none",border:"none",cursor:"pointer",color:"var(--text3)",fontSize:14}},"✕")
+          ),
+          search&&!selId&&avail.length===0&&search.length>1&&React.createElement("div",{className:"info-box info-orange",style:{marginTop:6}},"Produto não encontrado. Use Avulso.")
+        ),
+        tipo==="avulso"&&React.createElement("div",{className:"form-group"},
+          React.createElement("div",{className:"info-box info-orange"},"✏️  Não deduz do estoque"),
+          React.createElement(Inp,{label:"Nome do Produto",value:avName,onChange:e=>setAvName(e.target.value),placeholder:"Ex: iPhone 16 Pro 256GB"}),
+          React.createElement(Sel,{label:"Marca",value:avBrand,onChange:e=>setAvBrand(e.target.value)},BRANDS.map(b=>React.createElement("option",{key:b},b))),
+          React.createElement("div",{className:"grid2"},
+            React.createElement(Inp,{label:"Custo (R$)",type:"number",value:avCost,onChange:e=>setAvCost(e.target.value),placeholder:"0,00"}),
+            React.createElement(Inp,{label:"Venda (R$)",type:"number",value:avSale,onChange:e=>setAvSale(e.target.value),placeholder:"0,00"})
+          ),
+          avCost&&avSale&&+avSale>0&&React.createElement("div",{className:"margin-preview"},
+            React.createElement("span",null,"Margem: ",React.createElement("strong",null,((+avSale-+avCost)/+avSale*100).toFixed(1)+"%")),
+            React.createElement("span",null,"Lucro un.: ",React.createElement("strong",null,R(+avSale-+avCost)))
+          )
+        ),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Quantidade",type:"number",min:"1",value:qty,onChange:e=>setQty(e.target.value)}),
+          React.createElement(Inp,{label:"Desconto item (R$)",type:"number",min:"0",value:disc,onChange:e=>setDisc(e.target.value)})
+        ),
+        (prod||(tipo==="avulso"&&avSale&&avName))&&React.createElement("div",{style:{background:"var(--surface2)",borderRadius:9,padding:"9px 13px",display:"flex",justifyContent:"space-between",fontSize:13,color:"var(--text3)"}},
+          React.createElement("span",null,"Subtotal do item"),
+          React.createElement("span",{style:{fontFamily:"var(--mono)",fontWeight:600,color:"var(--accent2)"}},R(itemSubtotal))
+        ),
+        React.createElement("button",{
+          style:{width:"100%",background:canAdd?"var(--surface2)":"var(--surface)",border:"1px solid "+(canAdd?"var(--accent)":"var(--border2)"),borderRadius:10,padding:"11px",fontSize:13,fontWeight:700,color:canAdd?"var(--accent2)":"var(--text3)",cursor:canAdd?"pointer":"not-allowed",fontFamily:"var(--font)",letterSpacing:".02em"},
+          onClick:addItem,disabled:!canAdd
+        },"＋  Adicionar ao carrinho")
+      )
+    ),
+
+    /* ── DADOS DA VENDA (só aparece com itens) ── */
+    cart.length>0&&React.createElement("div",{className:"card",style:{padding:16}},
+      React.createElement("div",{style:{fontSize:12,fontWeight:700,color:"var(--text2)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:14}},"Dados da Venda"),
+      React.createElement("div",{className:"form-group"},
+
+        React.createElement("div",null,
+          React.createElement("div",{className:"field-label"},"Troca"),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+            React.createElement("button",{className:"tipo-btn"+(hasTrade?" active-avulso":""),onClick:()=>setHasTrade(true),type:"button"},"🔄  Sim, tem troca"),
+            React.createElement("button",{className:"tipo-btn"+(!hasTrade?" active-stock":""),onClick:()=>{setHasTrade(false);setTradeModel("");setTradeValue("0");},type:"button"},"✕  Sem troca")
+          )
+        ),
+        hasTrade&&React.createElement("div",{style:{background:"#FF8C4210",border:"1px solid #FF8C4225",borderRadius:10,padding:"12px 14px",display:"flex",flexDirection:"column",gap:10}},
+          React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--orange)",textTransform:"uppercase",letterSpacing:".06em"}},"Produto que entrou na troca"),
+          React.createElement(Inp,{label:"Modelo",value:tradeModel,onChange:e=>setTradeModel(e.target.value),placeholder:"Ex: iPhone 13 128GB"}),
+          React.createElement(Inp,{label:"Valor da troca (R$)",type:"number",value:tradeValue,onChange:e=>setTradeValue(e.target.value),placeholder:"0,00"})
+        ),
+
+        React.createElement("div",null,
+          React.createElement("div",{className:"field-label"},"Forma de Pagamento"),
+          React.createElement("div",{className:"pills"},PAYMENTS.map(m=>React.createElement("button",{key:m,className:"pill"+(payment===m?" active":""),onClick:()=>setPayment(m)},m)))
+        ),
+
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Sinal / Entrada (R$)",type:"number",min:"0",value:signalValue,onChange:e=>setSignalValue(e.target.value),placeholder:"0,00"}),
+          React.createElement("div",null,
+            React.createElement("div",{className:"field-label"},"Restante"),
+            React.createElement("div",{style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",fontSize:14,fontFamily:"var(--mono)",color:remaining>0?"var(--orange)":"var(--green)",fontWeight:700}},R(remaining))
+          )
+        ),
+
+        React.createElement("div",null,
+          React.createElement("div",{className:"field-label"},"Retirada ou Entrega"),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}},
+            React.createElement("button",{className:"tipo-btn"+(deliveryType==="Retirada"?" active-stock":""),onClick:()=>setDeliveryType("Retirada"),type:"button"},"🏪  Retirada"),
+            React.createElement("button",{className:"tipo-btn"+(deliveryType==="Entrega"?" active-avulso":""),onClick:()=>setDeliveryType("Entrega"),type:"button"},"🚚  Entrega")
+          )
+        ),
+
+        React.createElement(Inp,{label:"Vendedor (opcional)",value:seller,onChange:e=>setSeller(e.target.value),placeholder:"Nome de quem está vendendo"}),
+
+        /* CLIENTE */
+        React.createElement("div",{style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:12,padding:"14px 14px",display:"flex",flexDirection:"column",gap:13}},
+          React.createElement("div",{style:{fontSize:11,fontWeight:700,color:"var(--text2)",textTransform:"uppercase",letterSpacing:".07em"}},"Dados do Cliente"),
+
+          React.createElement("div",null,
+            React.createElement("div",{className:"field-label"},"Tipo de Cliente"),
+            React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}},
+              ["Cliente Novo","Já Cliente","Indicação"].map(t=>
+                React.createElement("button",{key:t,type:"button",
+                  style:{padding:"9px 6px",borderRadius:9,fontFamily:"var(--font)",fontWeight:600,fontSize:11,cursor:"pointer",border:"1.5px solid",
+                    background:customerType===t?"#C9A84C15":"transparent",
+                    color:customerType===t?"var(--accent2)":"var(--text3)",
+                    borderColor:customerType===t?"#C9A84C40":"var(--border2)",
+                    transition:"all .15s"},
+                  onClick:()=>setCustomerType(customerType===t?"":t)
+                },t)
+              )
+            )
+          ),
+
+          React.createElement("div",{className:"grid2"},
+            React.createElement(Inp,{label:"Nome",value:customerName,onChange:e=>setCustomerName(e.target.value),placeholder:"Nome completo"}),
+            React.createElement(Inp,{label:"Telefone",value:customerPhone,onChange:e=>setCustomerPhone(e.target.value),placeholder:"(51) 99999-9999"})
+          ),
+          React.createElement("div",{className:"grid2"},
+            React.createElement(Inp,{label:"CPF",value:customerCpf,onChange:e=>setCustomerCpf(e.target.value),placeholder:"000.000.000-00"}),
+            React.createElement(Inp,{label:"Data de Nascimento",type:"date",value:customerBirth,onChange:e=>setCustomerBirth(e.target.value)})
+          ),
+          React.createElement(Inp,{label:"E-mail",value:customerEmail,onChange:e=>setCustomerEmail(e.target.value),placeholder:"email@exemplo.com",type:"email"}),
+          React.createElement("div",{className:"grid2"},
+            React.createElement(Inp,{label:"CEP",value:customerCep,onChange:e=>setCustomerCep(e.target.value),placeholder:"00000-000"}),
+            React.createElement(Inp,{label:"Número",value:customerNumber,onChange:e=>setCustomerNumber(e.target.value),placeholder:"123"})
+          ),
+          React.createElement(Inp,{label:"Endereço",value:customerAddress,onChange:e=>setCustomerAddress(e.target.value),placeholder:"Rua, bairro, cidade"}),
+          React.createElement(Inp,{label:"Complemento",value:customerComplement,onChange:e=>setCustomerComplement(e.target.value),placeholder:"Apto, bloco, referência..."})
+        ),
+
+        React.createElement("div",{className:"total-box"},
+          cart.map(item=>React.createElement("div",{key:item.id,className:"total-line"},
+            React.createElement("span",null,item.productName+(item.quantity>1?" ("+item.quantity+"×)":"")),
+            React.createElement("span",{style:{fontFamily:"var(--mono)"}},R(item.subtotal))
+          )),
+          tv>0&&React.createElement("div",{className:"total-line",style:{color:"var(--orange)"}},
+            React.createElement("span",null,"Troca ("+tradeModel+")"),
+            React.createElement("span",{style:{fontFamily:"var(--mono)"}},"– "+R(tv))
+          ),
+          React.createElement("div",{className:"total-main"},
+            React.createElement("span",null,"Total"),
+            React.createElement("span",{style:{color:"var(--accent2)",fontFamily:"var(--mono)"}},R(total))
+          ),
+          sv>0&&React.createElement("div",{className:"total-line",style:{marginTop:6,color:"var(--green)"}},React.createElement("span",null,"Entrada paga"),React.createElement("span",{style:{fontFamily:"var(--mono)"}},R(sv))),
+          sv>0&&React.createElement("div",{className:"total-line",style:{color:remaining>0?"var(--orange)":"var(--green)",fontWeight:600}},React.createElement("span",null,"Restante a receber"),React.createElement("span",{style:{fontFamily:"var(--mono)"}},R(remaining))),
+          React.createElement("div",{className:"total-profit"},React.createElement("span",null,"Lucro estimado"),React.createElement("span",{style:{color:profit>=0?"var(--green)":"var(--red)",fontFamily:"var(--mono)",fontWeight:600}},R(profit)))
+        ),
+
+        React.createElement("button",{className:"btn-primary",onClick:register,disabled:cart.length===0||syncing},
+          "Confirmar Venda"+(cart.length>1?" ("+cart.length+" itens)":"")
+        )
+      )
+    )
+  );
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────────────────────────────
+function Historico({sales,onDelete,store}){
+  const[fm,setFm]=useState("");
+  const months=[...new Set(sales.map(s=>s.date.slice(0,7)))].sort().reverse();
+  const filtered=fm?sales.filter(s=>s.date.startsWith(fm)):sales;
+  const sorted=[...filtered].reverse();
+  const totR=filtered.reduce((a,s)=>a+s.total,0),totL=filtered.reduce((a,s)=>a+(s.total-s.costPrice*s.quantity),0);
+
+  const gerarRecibo=(s)=>{
+    const items=s.items&&s.items.length>0?s.items:[{productName:s.productName,brand:s.brand,quantity:s.quantity,unitPrice:s.unitPrice,discount:s.discount||0,subtotal:s.total+(s.tradeValue||0),avulso:s.avulso}];
+    const num=s.id.slice(-6).toUpperCase();
+    const html=`<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8">
+<title>Recibo ${num} — ${store.name||"FIRST"}</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Helvetica Neue',Arial,sans-serif;background:#fff;color:#1a1a1a;padding:0;max-width:680px;margin:0 auto}
+  .page{padding:48px 44px}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a1a1a;padding-bottom:20px;margin-bottom:28px}
+  .logo{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .logo-sub{font-size:12px;color:#555;margin-top:2px}
+  .rec-num{text-align:right}
+  .rec-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:4px}
+  .rec-val{font-size:18px;font-weight:700}
+  .rec-date{font-size:12px;color:#555;margin-top:2px}
+  .store-info{font-size:12px;color:#555;line-height:1.7;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e5e5e5}
+  .section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#888;margin-bottom:12px}
+  .client-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid #e5e5e5}
+  .cfield label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#888;display:block;margin-bottom:2px}
+  .cfield span{font-size:13px;font-weight:500}
+  table{width:100%;border-collapse:collapse;margin-bottom:24px}
+  thead th{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:#888;font-weight:600;text-align:left;padding:8px 0;border-bottom:1px solid #e5e5e5}
+  thead th:last-child{text-align:right}
+  tbody td{padding:10px 0;font-size:13px;border-bottom:1px solid #f2f2f2;vertical-align:top}
+  tbody td:last-child{text-align:right;font-weight:600}
+  .totals{margin-left:auto;width:260px;margin-bottom:28px}
+  .tot-row{display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:6px}
+  .tot-main{display:flex;justify-content:space-between;font-size:18px;font-weight:800;border-top:2px solid #1a1a1a;padding-top:10px;margin-top:8px}
+  .payment-row{display:flex;gap:24px;background:#f7f7f7;border-radius:8px;padding:14px 16px;margin-bottom:28px}
+  .pf{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:3px}
+  .pv{font-size:13px;font-weight:600}
+  .trade-box{background:#fff8f0;border:1px solid #ffe0b2;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:13px}
+  .footer{text-align:center;font-size:11px;color:#aaa;border-top:1px solid #e5e5e5;padding-top:20px;margin-top:8px;line-height:1.8}
+  .stamp{display:inline-block;border:2px solid #1a1a1a;border-radius:50%;width:90px;height:90px;line-height:90px;font-size:11px;font-weight:700;text-align:center;margin:20px auto;display:flex;align-items:center;justify-content:center;text-transform:uppercase;letter-spacing:.06em}
+  @media print{body{max-width:none}.page{padding:28px 32px}}
+</style></head><body><div class="page">
+  <div class="hdr">
+    <div><div class="logo">${store.name||"FIRST"}</div><div class="logo-sub">${store.address||""}</div>${store.cnpj?`<div class="logo-sub">CNPJ: ${store.cnpj}</div>`:''}</div>
+    <div class="rec-num"><div class="rec-label">Recibo de Compra e Venda</div><div class="rec-val">#${num}</div><div class="rec-date">${Dt(s.date)}</div></div>
+  </div>
+  ${store.phone||store.email?`<div class="store-info">${store.phone?`📞 ${store.phone}`:''} ${store.email?`&nbsp;·&nbsp; ✉️ ${store.email}`:''}</div>`:''}
+  ${s.customerName||s.customerCpf?`
+  <div class="section-title">Dados do Comprador</div>
+  <div class="client-grid">
+    ${s.customerName?`<div class="cfield"><label>Nome</label><span>${s.customerName}</span></div>`:''}
+    ${s.customerCpf?`<div class="cfield"><label>CPF</label><span>${s.customerCpf}</span></div>`:''}
+    ${s.customerPhone?`<div class="cfield"><label>Telefone</label><span>${s.customerPhone}</span></div>`:''}
+    ${s.customerEmail?`<div class="cfield"><label>E-mail</label><span>${s.customerEmail}</span></div>`:''}
+    ${s.customerBirth?`<div class="cfield"><label>Data de Nascimento</label><span>${Dt(s.customerBirth)}</span></div>`:''}
+    ${s.customerAddress?`<div class="cfield" style="grid-column:span 2"><label>Endereço</label><span>${s.customerAddress}${s.customerNumber?', '+s.customerNumber:''}${s.customerComplement?' — '+s.customerComplement:''}${s.customerCep?' — CEP: '+s.customerCep:''}</span></div>`:''}
+  </div>`:''}
+  <div class="section-title">Produtos</div>
+  <table>
+    <thead><tr><th>Descrição</th><th>Qtd</th><th>Valor Un.</th><th>Subtotal</th></tr></thead>
+    <tbody>
+      ${items.map(i=>`<tr><td><strong>${i.productName}</strong>${i.brand?`<br><span style="font-size:11px;color:#888">${i.brand}</span>`:''}${i.avulso?`<br><span style="font-size:10px;color:#e67e22">Produto avulso</span>`:''}</td><td>${i.quantity}</td><td>${R(i.unitPrice)}</td><td>${R(i.subtotal)}</td></tr>`).join('')}
+    </tbody>
+  </table>
+  ${s.tradeModel?`<div class="trade-box">🔄 <strong>Troca recebida:</strong> ${s.tradeModel} — valor de troca: ${R(s.tradeValue)}</div>`:''}
+  <div class="totals">
+    ${items.length>1?`<div class="tot-row"><span>Subtotal</span><span>${R(items.reduce((a,i)=>a+i.subtotal,0))}</span></div>`:''}
+    ${s.tradeValue?`<div class="tot-row"><span>(-) Troca</span><span>- ${R(s.tradeValue)}</span></div>`:''}
+    <div class="tot-main"><span>Total</span><span>${R(s.total)}</span></div>
+  </div>
+  <div class="payment-row">
+    <div><div class="pf">Pagamento</div><div class="pv">${s.paymentMethod}</div></div>
+    ${s.signalValue?`<div><div class="pf">Entrada paga</div><div class="pv">${R(s.signalValue)}</div></div>`:''}
+    ${s.remaining>0?`<div><div class="pf">Restante</div><div class="pv" style="color:#e67e22">${R(s.remaining)}</div></div>`:''}
+    <div><div class="pf">Entrega</div><div class="pv">${s.deliveryType||"Retirada"}</div></div>
+    ${s.seller&&s.seller!=="—"?`<div><div class="pf">Vendedor</div><div class="pv">${s.seller}</div></div>`:''}
+  </div>
+  <div class="footer">
+    <p>Este recibo comprova a compra e venda do(s) produto(s) descrito(s) acima.</p>
+    <p>Para dúvidas ou garantia, entre em contato: ${store.phone||''} ${store.email?'· '+store.email:''}</p>
+    <p style="margin-top:6px;font-size:10px;color:#ccc">Gerado em ${new Date().toLocaleString("pt-BR")} · ${store.name||"FIRST"} #${num}</p>
+  </div>
+</div></body></html>`;
+    const w=window.open("","_blank");
+    w.document.write(html);w.document.close();
+    setTimeout(()=>w.print(),600);
+  };
+
+  const exportCSV=()=>{
+    const rows=[["Data","Produto","Marca","Qtd","Pagamento","Desconto","Troca","Valor Troca","Total","Lucro","Sinal","Restante","Entrega","Vendedor","Avulso"]];
+    [...sales].reverse().forEach(s=>rows.push([
+      Dt(s.date),s.productName,s.brand,s.quantity,s.paymentMethod,
+      (s.discount||0).toFixed(2).replace(".",","),
+      s.tradeModel||"",
+      (s.tradeValue||0).toFixed(2).replace(".",","),
+      s.total.toFixed(2).replace(".",","),
+      (s.total-s.costPrice*s.quantity).toFixed(2).replace(".",","),
+      (s.signalValue||0).toFixed(2).replace(".",","),
+      (s.remaining||0).toFixed(2).replace(".",","),
+      s.deliveryType||"Retirada",
+      s.seller||"—",
+      s.avulso?"Sim":"Não"
+    ]));
+    const bom="\uFEFF";
+    const csv=bom+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download="FIRST_vendas_"+(fm||"todas")+"_"+new Date().toISOString().slice(0,10)+".csv";
+    a.click();
+  };
+
+  const exportProdutos=()=>{
+    // esta função é chamada do Config, mas deixamos aqui para referência
+  };
+
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:12}},
+      React.createElement("select",{value:fm,onChange:e=>setFm(e.target.value),className:"inp",style:{width:"auto",fontSize:13}},
+        React.createElement("option",{value:""},"Todos os meses"),
+        months.map(m=>React.createElement("option",{key:m,value:m},m))
+      ),
+      filtered.length>0&&React.createElement("div",{style:{fontSize:12,color:"var(--text3)"}},"Receita ",React.createElement("strong",{style:{color:"var(--blue)",fontFamily:"var(--mono)"}},R(totR))," · Lucro ",React.createElement("strong",{style:{color:"var(--green)",fontFamily:"var(--mono)"}},R(totL)))
+    ),
+    filtered.length>0&&React.createElement("button",{onClick:exportCSV,style:{width:"100%",background:"var(--surface)",border:"1px solid var(--border2)",borderRadius:10,padding:"10px",fontSize:12,fontWeight:700,color:"var(--accent2)",cursor:"pointer",fontFamily:"var(--font)",marginBottom:12,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+      "⬇  Exportar "+(fm?fm:"todas as vendas")+" para Excel (.csv)"
+    ),
+    React.createElement("div",{className:"card"},
+      sorted.length===0?React.createElement(Empty,{icon:"📋",text:"Nenhuma venda encontrada"}):
+      React.createElement("div",null,sorted.map(s=>
+        React.createElement("div",{key:s.id,className:"row"},
+          React.createElement("div",{style:{flex:1,minWidth:0}},
+            React.createElement("div",{className:"row-name",style:{display:"flex",alignItems:"center",gap:6}},
+              React.createElement("span",{style:{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},
+                s.items&&s.items.length>1
+                  ? s.items.length+" produtos"
+                  : s.productName
+              ),
+              s.avulso&&!s.items&&React.createElement("span",{className:"tag tag-avulso"},"avulso"),
+              s.items&&s.items.length>1&&React.createElement("span",{className:"tag",style:{color:"var(--blue)",borderColor:"#4A8BFF30",background:"#4A8BFF10"}},s.items.length+" itens")
+            ),
+            s.items&&s.items.length>1&&React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginTop:3}},
+              s.items.map(i=>i.productName+(i.quantity>1?" ×"+i.quantity:"")).join(" · ")
+            ),
+            React.createElement("div",{className:"row-meta"},Dt(s.date)+" · "+s.paymentMethod+" · "+s.quantity+" un."+(s.seller&&s.seller!=="—"?" · "+s.seller:"")),
+            React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:5,marginTop:5}},
+              s.deliveryType&&React.createElement("span",{className:"tag"},s.deliveryType==="Entrega"?"🚚 Entrega":"🏪 Retirada"),
+              s.tradeModel&&React.createElement("span",{className:"tag tag-avulso"},"🔄 "+s.tradeModel+" ("+R(s.tradeValue)+")"),
+              s.remaining>0&&React.createElement("span",{className:"tag",style:{color:"var(--orange)",borderColor:"#FF8C4230",background:"#FF8C4210"}},"Restante "+R(s.remaining)),
+              s.customerType&&React.createElement("span",{className:"tag",style:{color:"var(--accent2)",borderColor:"#C9A84C30",background:"#C9A84C10"}},s.customerType),
+              s.customerName&&React.createElement("span",{className:"tag"},"👤 "+s.customerName),
+              s.customerPhone&&React.createElement("span",{className:"tag"},s.customerPhone)
+            )
+          ),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:6,marginLeft:10,flexShrink:0}},
+            React.createElement("div",{style:{textAlign:"right"}},
+              React.createElement("div",{className:"row-val"},R(s.total)),
+              React.createElement("div",{className:"row-profit"},"+"+R(s.total-s.costPrice*s.quantity))
+            ),
+            React.createElement("button",{onClick:()=>gerarRecibo(s),title:"Gerar recibo",style:{color:"var(--accent2)",background:"#C9A84C15",border:"1px solid #C9A84C30",borderRadius:8,cursor:"pointer",fontSize:13,padding:"5px 8px",flexShrink:0}},"🧾"),
+            React.createElement("button",{onClick:()=>onDelete("sales",s.id),style:{color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"0 2px"}},"×")
+          )
+        )
+      ))
+    )
+  );
+}
+
+// ── DESPESAS ──────────────────────────────────────────────────────────────────
+function Despesas({expenses,onSave,onDelete,syncing}){
+  const[show,setShow]=useState(false);
+  const f0={date:today(),description:"",category:"Aluguel",value:""};const[form,setForm]=useState(f0);
+  const total=expenses.reduce((a,e)=>a+e.value,0);
+  const save=async()=>{if(!form.description||!form.value)return;await onSave({...form,id:uid(),value:+form.value});setForm(f0);setShow(false);};
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+      React.createElement("span",{style:{fontSize:13,color:"var(--text3)"}},"Total: ",React.createElement("strong",{style:{color:"var(--red)",fontFamily:"var(--mono)"}},R(total))),
+      React.createElement("button",{onClick:()=>setShow(true),style:{background:"linear-gradient(135deg,#C9A84C,#8B6A1F)",color:"#000",border:"none",borderRadius:9,padding:"7px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"var(--font)"}},"+ Despesa")
+    ),
+    React.createElement("div",{className:"card"},
+      expenses.length===0?React.createElement(Empty,{icon:"💸",text:"Nenhuma despesa cadastrada"}):
+      React.createElement("div",null,[...expenses].reverse().map(e=>
+        React.createElement("div",{key:e.id,className:"row"},
+          React.createElement("div",{style:{flex:1}},
+            React.createElement("div",{className:"row-name"},e.description),
+            React.createElement("div",{className:"row-meta"},Dt(e.date)+" · ",React.createElement("span",{className:"tag"},e.category))
+          ),
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:10}},
+            React.createElement("span",{style:{fontSize:14,fontWeight:700,fontFamily:"var(--mono)",color:"var(--red)"}},R(e.value)),
+            React.createElement("button",{onClick:()=>onDelete("expenses",e.id),style:{color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontSize:16}},"×")
+          )
+        )
+      ))
+    ),
+    show&&React.createElement(Sheet,{onClose:()=>setShow(false)},
+      React.createElement("div",{className:"sheet-title"},"Nova Despesa"),
+      React.createElement("div",{className:"form-group"},
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Data",type:"date",value:form.date,onChange:e=>setForm({...form,date:e.target.value})}),
+          React.createElement(Sel,{label:"Categoria",value:form.category,onChange:e=>setForm({...form,category:e.target.value})},EXP_CATS.map(c=>React.createElement("option",{key:c},c)))
+        ),
+        React.createElement(Inp,{label:"Descrição",value:form.description,onChange:e=>setForm({...form,description:e.target.value}),placeholder:"Ex: Aluguel de maio"}),
+        React.createElement(Inp,{label:"Valor (R$)",type:"number",value:form.value,onChange:e=>setForm({...form,value:e.target.value}),placeholder:"0,00"}),
+        React.createElement("button",{className:"btn-primary",onClick:save,disabled:syncing},"Salvar Despesa")
+      )
+    )
+  );
+}
+
+// ── DRE ───────────────────────────────────────────────────────────────────────
+function DRE({sales,expenses}){
+  const[month,setMonth]=useState(nowMonth());
+  const allM=[...new Set([...sales.map(s=>s.date.slice(0,7)),...expenses.map(e=>e.date.slice(0,7))])].sort().reverse();
+  const mS=sales.filter(s=>s.date.startsWith(month)),mE=expenses.filter(e=>e.date.startsWith(month));
+  const receita=mS.reduce((a,s)=>a+s.total,0),cmv=mS.reduce((a,s)=>a+s.costPrice*s.quantity,0),lb=receita-cmv;
+  const mgB=receita>0?lb/receita*100:0,totalDesp=mE.reduce((a,e)=>a+e.value,0),ll=lb-totalDesp,mgL=receita>0?ll/receita*100:0;
+  const byCat=EXP_CATS.map(c=>({c,v:mE.filter(e=>e.category===c).reduce((a,e)=>a+e.value,0)})).filter(x=>x.v>0);
+  const byBrand=BRANDS.map(b=>({b,v:mS.filter(s=>s.brand===b).reduce((a,s)=>a+s.total,0)})).filter(x=>x.v>0).sort((a,b)=>b.v-a.v);
+  const[yr,mo]=month.split("-");
+  const mLabel=new Date(+yr,+mo-1,1).toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  const DRow=({label,value,indent,bold,sub,negative,green,blue,red,amber})=>{
+    const vc=green?"var(--green)":blue?"var(--blue)":red?"var(--red)":amber?"var(--accent2)":negative?"var(--red)":"var(--text)";
+    if(bold&&(green||blue||red||amber))return React.createElement("div",{className:"dre-block"},React.createElement("div",null,React.createElement("div",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},label),sub&&React.createElement("div",{style:{fontSize:11,color:vc,marginTop:2}},sub)),React.createElement("span",{style:{fontSize:16,fontWeight:700,fontFamily:"var(--mono)",color:vc}},negative&&value>0?"("+R(value)+")":R(value)));
+    return React.createElement("div",{className:"dre-row"},React.createElement("span",{className:"dre-label"+(bold?" bold":"")+(indent?" indent":"")},label),React.createElement("span",{className:"dre-val"+(bold?" bold":"")+(negative?" red":""),style:{color:vc}},negative&&value>0?"("+R(value)+")":R(value)));
+  };
+  return React.createElement("div",null,
+    React.createElement("select",{value:month,onChange:e=>setMonth(e.target.value),className:"inp",style:{width:"auto",fontSize:13,marginBottom:14}},(allM.length?allM:[month]).map(m=>React.createElement("option",{key:m,value:m},m))),
+    React.createElement("div",{className:"card",style:{marginBottom:12}},
+      React.createElement("div",{className:"dre-header"},
+        React.createElement("div",{style:{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".08em",marginBottom:4}},"DRE — Demonstração do Resultado"),
+        React.createElement("div",{style:{fontSize:18,fontWeight:800,color:"var(--text)",textTransform:"capitalize",letterSpacing:"-.3px"}},mLabel)
+      ),
+      React.createElement("div",{style:{padding:"8px 0"}},
+        React.createElement("div",{className:"dre-section"},"Receita"),React.createElement(DRow,{label:"(+) Receita Bruta de Vendas",value:receita,bold:true}),
+        React.createElement("div",{className:"dre-section"},"Custos"),React.createElement(DRow,{label:"(–) CMV — Custo das Mercadorias",value:cmv,negative:true}),
+        React.createElement(DRow,{label:"(=) Lucro Bruto",value:lb,bold:true,green:lb>=0,red:lb<0,sub:"Margem: "+mgB.toFixed(1)+"%"}),
+        React.createElement("div",{className:"dre-section"},"Despesas Operacionais"),
+        byCat.length===0?React.createElement("div",{style:{padding:"8px 16px",fontSize:12,color:"var(--text3)"}},"Nenhuma despesa neste mês"):byCat.map(({c,v})=>React.createElement(DRow,{key:c,label:"(–) "+c,value:v,indent:true,negative:true})),
+        React.createElement(DRow,{label:"(–) Total Despesas",value:totalDesp,bold:true,negative:true}),
+        React.createElement(DRow,{label:"(=) Lucro Líquido",value:ll,bold:true,blue:ll>0,amber:ll===0,red:ll<0,sub:"Margem: "+mgL.toFixed(1)+"%"})
+      ),
+      React.createElement("div",{className:"dre-stats"},[{l:"Vendas",v:mS.length},{l:"Ticket Médio",v:R(mS.length>0?receita/mS.length:0)},{l:"Margem Líq.",v:mgL.toFixed(1)+"%"}].map(({l,v},i)=>React.createElement("div",{key:i,className:"dre-stat"},React.createElement("div",{className:"dre-stat-label"},l),React.createElement("div",{className:"dre-stat-val"},v))))
+    ),
+    byBrand.length>0&&React.createElement("div",{className:"card"},
+      React.createElement("div",{className:"card-head"},React.createElement("h3",null,"Receita por Marca")),
+      React.createElement("div",{style:{padding:"14px 16px"}},byBrand.map(({b,v})=>
+        React.createElement("div",{key:b,className:"brand-bar"},
+          React.createElement("div",{className:"brand-bar-top"},React.createElement("span",{style:{fontSize:12,fontWeight:700,color:BRAND_COLORS[b]||"#888"}},b),React.createElement("span",{style:{fontSize:12,fontFamily:"var(--mono)",color:"var(--text)"}},R(v)," ",React.createElement("span",{style:{color:"var(--text3)",fontSize:11}},"("+(receita>0?(v/receita*100).toFixed(0):0)+"%)"))),
+          React.createElement("div",{className:"brand-bar-bg"},React.createElement("div",{className:"brand-bar-fill",style:{width:(receita>0?v/receita*100:0)+"%",background:BRAND_COLORS[b]||"var(--accent)"}}))
+        )
+      ))
+    )
+  );
+}
+
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+function Config({pin,setPin,onLogout,sales,products,expenses,store,setStore}){
+  const[nPin,setNPin]=useState("");const[conf,setConf]=useState("");const[msg,setMsg]=useState("");
+  const[storeForm,setStoreForm]=useState(store);const[storeMsg,setStoreMsg]=useState("");
+
+  const savePin=async()=>{
+    if(!nPin||nPin.length<4)return setMsg("PIN precisa ter ao menos 4 dígitos.");
+    if(nPin!==conf)return setMsg("Os PINs não coincidem.");
+    await sb.from("config").upsert({key:"pin",value:nPin});
+    setPin(nPin);setNPin("");setConf("");setMsg("✓ PIN alterado!");setTimeout(()=>setMsg(""),3000);
+  };
+
+  const saveStore=async()=>{
+    await sb.from("config").upsert({key:"store",value:JSON.stringify(storeForm)});
+    setStore(storeForm);setStoreMsg("✓ Dados salvos!");setTimeout(()=>setStoreMsg(""),3000);
+  };
+
+  const exportCSV=(rows,filename)=>{
+    const bom="\uFEFF";
+    const csv=bom+rows.map(r=>r.map(v=>`"${String(v==null?"":v).replace(/"/g,'""')}"`).join(";")).join("\n");
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    a.download=filename+"_"+new Date().toISOString().slice(0,10)+".csv";
+    a.click();
+  };
+
+  const exportEstoque=()=>{
+    const rows=[["Produto","Marca","Cor","Custo","Venda","Margem%","Estoque","Est.Mínimo","Condição","Saúde Bateria","Caixa Original"]];
+    products.forEach(p=>rows.push([
+      p.name,p.brand,p.color||"",
+      p.costPrice.toFixed(2).replace(".",","),
+      p.salePrice.toFixed(2).replace(".",","),
+      (p.salePrice>0?((p.salePrice-p.costPrice)/p.salePrice*100):0).toFixed(1).replace(".",","),
+      p.stock,p.minStock||2,
+      p.condition||"",
+      p.batteryHealth!=null?p.batteryHealth+"":"",
+      p.brand==="Apple"?(p.originalBox?"Sim":"Não"):""
+    ]));
+    exportCSV(rows,"FIRST_estoque");
+  };
+
+  const exportVendas=()=>{
+    const rows=[["Data","Produto","Marca","Qtd","Pagamento","Desconto","Troca","Valor Troca","Total","Lucro","Sinal","Restante","Entrega","Vendedor","Avulso"]];
+    [...sales].reverse().forEach(s=>rows.push([
+      Dt(s.date),s.productName,s.brand,s.quantity,s.paymentMethod,
+      (s.discount||0).toFixed(2).replace(".",","),
+      s.tradeModel||"",(s.tradeValue||0).toFixed(2).replace(".",","),
+      s.total.toFixed(2).replace(".",","),
+      (s.total-s.costPrice*s.quantity).toFixed(2).replace(".",","),
+      (s.signalValue||0).toFixed(2).replace(".",","),
+      (s.remaining||0).toFixed(2).replace(".",","),
+      s.deliveryType||"Retirada",s.seller||"—",s.avulso?"Sim":"Não"
+    ]));
+    exportCSV(rows,"FIRST_vendas");
+  };
+
+  const exportDespesas=()=>{
+    const rows=[["Data","Descrição","Categoria","Valor"]];
+    [...expenses].reverse().forEach(e=>rows.push([Dt(e.date),e.description,e.category,e.value.toFixed(2).replace(".",",")]));
+    exportCSV(rows,"FIRST_despesas");
+  };
+
+  return React.createElement("div",null,
+    React.createElement("div",{className:"config-card"},
+      React.createElement("div",{className:"config-title"},"🏪  Dados da Loja"),
+      React.createElement("div",{className:"config-sub",style:{marginBottom:14}},"Aparecem no recibo de compra e venda."),
+      React.createElement("div",{className:"form-group"},
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Nome da Loja",value:storeForm.name||"",onChange:e=>setStoreForm({...storeForm,name:e.target.value}),placeholder:"Ex: FIRST"}),
+          React.createElement(Inp,{label:"CNPJ",value:storeForm.cnpj||"",onChange:e=>setStoreForm({...storeForm,cnpj:e.target.value}),placeholder:"00.000.000/0001-00"})
+        ),
+        React.createElement(Inp,{label:"Endereço Completo",value:storeForm.address||"",onChange:e=>setStoreForm({...storeForm,address:e.target.value}),placeholder:"Rua, número, bairro, cidade — RS"}),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Telefone/WhatsApp",value:storeForm.phone||"",onChange:e=>setStoreForm({...storeForm,phone:e.target.value}),placeholder:"(51) 99999-9999"}),
+          React.createElement(Inp,{label:"E-mail",value:storeForm.email||"",onChange:e=>setStoreForm({...storeForm,email:e.target.value}),placeholder:"contato@first.com.br"})
+        ),
+        storeMsg&&React.createElement("div",{style:{fontSize:13,fontWeight:600,color:"var(--green)"}},storeMsg),
+        React.createElement("button",{className:"btn-primary",onClick:saveStore},"Salvar Dados da Loja")
+      )
+    ),
+    React.createElement("div",{className:"config-card"},
+      React.createElement("div",{className:"config-title"},"⬇  Backup e Exportação"),
+      React.createElement("div",{className:"config-sub",style:{marginBottom:14}},"Exporte seus dados para Excel a qualquer momento. Abra o .csv no Excel ou Google Sheets."),
+      React.createElement("div",{style:{display:"flex",flexDirection:"column",gap:8}},
+        React.createElement("button",{onClick:exportVendas,style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 14px",fontSize:13,fontWeight:700,color:"var(--accent2)",cursor:"pointer",fontFamily:"var(--font)",textAlign:"left"}},"📋  Exportar todas as vendas"),
+        React.createElement("button",{onClick:exportEstoque,style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 14px",fontSize:13,fontWeight:700,color:"var(--blue)",cursor:"pointer",fontFamily:"var(--font)",textAlign:"left"}},"📦  Exportar estoque"),
+        React.createElement("button",{onClick:exportDespesas,style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 14px",fontSize:13,fontWeight:700,color:"var(--red)",cursor:"pointer",fontFamily:"var(--font)",textAlign:"left"}},"💸  Exportar despesas")
+      )
+    ),
+    React.createElement("div",{className:"config-card"},
+      React.createElement("div",{className:"config-title"},"🔐  Alterar PIN de Admin"),
+      React.createElement("div",{style:{height:12}}),
+      React.createElement("div",{className:"form-group"},
+        React.createElement(Inp,{label:"Novo PIN",type:"password",inputMode:"numeric",value:nPin,onChange:e=>setNPin(e.target.value),placeholder:"Mínimo 4 dígitos"}),
+        React.createElement(Inp,{label:"Confirmar PIN",type:"password",inputMode:"numeric",value:conf,onChange:e=>setConf(e.target.value),placeholder:"Repita o PIN"}),
+        msg&&React.createElement("div",{style:{fontSize:13,fontWeight:600,color:msg.startsWith("✓")?"var(--green)":"var(--red)"}},msg),
+        React.createElement("button",{className:"btn-primary",onClick:savePin},"Salvar PIN")
+      )
+    ),
+    React.createElement("div",{className:"config-card"},
+      React.createElement("div",{className:"config-title"},"👥  Acesso dos Vendedores"),
+      React.createElement("div",{className:"config-sub"},"Compartilhe o link do sistema com seus vendedores. Eles entram como Vendedor (sem PIN) e têm acesso apenas ao estoque e registro de vendas.")
+    ),
+    React.createElement("div",{className:"config-card"},
+      React.createElement("div",{className:"config-title"},"🗄️  Banco de Dados — Supabase"),
+      React.createElement("div",{className:"config-sub"},"Dados salvos na nuvem e sincronizados em tempo real. Atenção: projetos Supabase inativos por +7 dias são pausados. Exporte backups regularmente.")
+    ),
+    React.createElement("button",{className:"btn-danger",onClick:onLogout},"Sair do modo Admin")
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────────────────────
+function App(){
+  const[mode,setMode]=useState(null);const[tab,setTab]=useState("dashboard");
+  const[products,setProducts]=useState([]);const[sales,setSales]=useState([]);const[expenses,setExpenses]=useState([]);
+  const[pin,setPin]=useState(DEFAULT_PIN);const[ready,setReady]=useState(false);const[syncing,setSyncing]=useState(false);
+  const[store,setStore]=useState({name:"FIRST PHONES LTDA",cnpj:"50.692.681/0001-74",address:"Av. Getúlio Vargas, 4831 — Sala 1105, Torre Medical — Canoas/RS",phone:"(51) 98907-6538",email:"firstgarmin@gmail.com"});
+
+  // Carrega dados do Supabase
+  useEffect(()=>{
+    const load=async()=>{
+      const[{data:p},{data:s},{data:e},{data:cfg}]=await Promise.all([
+        sb.from("products").select("*").order("name"),
+        sb.from("sales").select("*").order("date"),
+        sb.from("expenses").select("*").order("date"),
+        sb.from("config").select("*"),
+      ]);
+      if(p)setProducts(p.map(fromDB.product));
+      if(s)setSales(s.map(fromDB.sale));
+      if(e)setExpenses(e.map(fromDB.expense));
+      if(cfg){
+        const pinRow=cfg.find(r=>r.key==="pin");if(pinRow)setPin(pinRow.value);
+        const storeRow=cfg.find(r=>r.key==="store");if(storeRow){try{setStore(JSON.parse(storeRow.value));}catch{}}
+      }
+      setReady(true);
+    };
+    load();
+  },[]);
+
+  // Escuta mudanças em tempo real
+  useEffect(()=>{
+    if(!ready)return;
+    const ch=sb.channel("first-realtime")
+      .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>sb.from("products").select("*").order("name").then(({data})=>{if(data)setProducts(data.map(fromDB.product));}))
+      .on("postgres_changes",{event:"*",schema:"public",table:"sales"},()=>sb.from("sales").select("*").order("date").then(({data})=>{if(data)setSales(data.map(fromDB.sale));}))
+      .on("postgres_changes",{event:"*",schema:"public",table:"expenses"},()=>sb.from("expenses").select("*").order("date").then(({data})=>{if(data)setExpenses(data.map(fromDB.expense));}))
+      .subscribe();
+    return()=>sb.removeChannel(ch);
+  },[ready]);
+
+  const withSync=async fn=>{setSyncing(true);try{await fn();}finally{setSyncing(false);}};
+
+  const onSaveProduct=p=>withSync(async()=>{
+    await sb.from("products").upsert(toDB.product(p));
+    setProducts(prev=>{const idx=prev.findIndex(x=>x.id===p.id);return idx>=0?prev.map(x=>x.id===p.id?p:x):[...prev,p];});
+  });
+
+  const onSaveSale=s=>withSync(async()=>{
+    await sb.from("sales").insert(toDB.sale(s));
+    setSales(prev=>[...prev,s]);
+  });
+
+  const onUpdateStock=(id,newStock)=>withSync(async()=>{
+    await sb.from("products").update({stock:newStock}).eq("id",id);
+    setProducts(prev=>prev.map(p=>p.id===id?{...p,stock:newStock}:p));
+  });
+
+  const onSaveExpense=e=>withSync(async()=>{
+    await sb.from("expenses").insert(toDB.expense(e));
+    setExpenses(prev=>[...prev,e]);
+  });
+
+  const onDelete=(table,id)=>withSync(async()=>{
+    await sb.from(table).delete().eq("id",id);
+    if(table==="products")setProducts(p=>p.filter(x=>x.id!==id));
+    if(table==="sales")setSales(p=>p.filter(x=>x.id!==id));
+    if(table==="expenses")setExpenses(p=>p.filter(x=>x.id!==id));
+  });
+
+  useEffect(()=>{if(mode==="seller")setTab("estoque");if(mode==="admin")setTab("dashboard");},[mode]);
+
+  if(!ready)return React.createElement("div",{className:"login"},React.createElement("div",{className:"login-logo"},"F"),React.createElement("div",{style:{fontSize:13,color:"var(--text3)",marginTop:14}},"Conectando ao banco de dados..."));
+  if(!mode)return React.createElement(Login,{onAdmin:()=>setMode("admin"),onSeller:()=>setMode("seller"),storedPin:pin});
+
+  const isAdmin=mode==="admin";
+  const TABS=isAdmin
+    ?[{id:"dashboard",icon:"◈",label:"Início"},{id:"estoque",icon:"◫",label:"Estoque"},{id:"vendas",icon:"＋",label:"Vender"},{id:"historico",icon:"≡",label:"Vendas"},{id:"despesas",icon:"↓",label:"Despesas"},{id:"dre",icon:"◎",label:"DRE"},{id:"config",icon:"⚙",label:"Config"}]
+    :[{id:"estoque",icon:"◫",label:"Estoque"},{id:"vendas",icon:"＋",label:"Vender"}];
+
+  const PAGE_TITLES={dashboard:"Painel",estoque:"Estoque",vendas:"Nova Venda",historico:"Histórico de Vendas",despesas:"Despesas",dre:"DRE",config:"Configurações"};
+
+  const Sidebar=()=>React.createElement("div",{className:"sidebar"},
+    React.createElement("div",{className:"sidebar-logo"},
+      React.createElement("div",{className:"sidebar-mark"},"F"),
+      React.createElement("div",null,
+        React.createElement("div",{className:"sidebar-name"},"FIRST"),
+        React.createElement("div",{className:"sidebar-sub"},"Gestão · Canoas")
+      )
+    ),
+    React.createElement("div",{className:"sidebar-nav"},
+      TABS.map(t=>React.createElement("button",{key:t.id,className:"sidebar-item"+(tab===t.id?" active":""),onClick:()=>setTab(t.id)},
+        React.createElement("span",{className:"si-icon"},t.icon),
+        React.createElement("span",{className:"si-label"},t.label)
+      ))
+    ),
+    React.createElement("div",{className:"sidebar-footer"},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",justifyContent:"space-between"}},
+        React.createElement("span",{className:"badge "+(isAdmin?"badge-admin":"badge-seller")},isAdmin?"🔐 Admin":"🛍️ Vendedor"),
+        !isAdmin&&React.createElement("button",{onClick:()=>setMode(null),style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",cursor:"pointer",color:"var(--text2)",fontSize:11,fontFamily:"var(--font)",fontWeight:600}},"Trocar")
+      ),
+      isAdmin&&React.createElement("button",{onClick:()=>setMode(null),style:{background:"transparent",border:"1px solid var(--border2)",borderRadius:9,padding:"7px 10px",cursor:"pointer",color:"var(--text3)",fontSize:11,fontFamily:"var(--font)",fontWeight:600,width:"100%",textAlign:"left"}},"← Sair do Admin")
+    )
+  );
+
+  return React.createElement("div",{className:"app"},
+    syncing&&React.createElement(Syncing),
+    React.createElement(Sidebar),
+    React.createElement("div",{className:"hdr"},
+      React.createElement("div",{className:"hdr-logo"},
+        React.createElement("div",{className:"hdr-mark"},"F"),
+        React.createElement("div",null,React.createElement("div",{className:"hdr-name"},"FIRST"),React.createElement("div",{className:"hdr-sub"},"Gestão · Canoas"))
+      ),
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},
+        React.createElement("span",{className:"badge "+(isAdmin?"badge-admin":"badge-seller")},isAdmin?"Admin":"Vendedor"),
+        !isAdmin&&React.createElement("button",{onClick:()=>setMode(null),style:{background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:8,padding:"4px 10px",cursor:"pointer",color:"var(--text2)",fontSize:11,fontFamily:"var(--font)",fontWeight:600}},"Trocar")
+      )
+    ),
+    React.createElement("div",{className:"content"},
+      React.createElement("div",{className:"page-title"},PAGE_TITLES[tab]||""),
+      tab==="dashboard"&&isAdmin&&React.createElement(Dashboard,{products,sales,expenses,setTab}),
+      tab==="estoque"&&React.createElement(Estoque,{products,onSave:onSaveProduct,onDelete,isAdmin,syncing}),
+      tab==="vendas"&&React.createElement(NovaVenda,{products,onSaveSale,onUpdateStock,syncing}),
+      tab==="historico"&&isAdmin&&React.createElement(Historico,{sales,onDelete,store}),
+      tab==="despesas"&&isAdmin&&React.createElement(Despesas,{expenses,onSave:onSaveExpense,onDelete,syncing}),
+      tab==="dre"&&isAdmin&&React.createElement(DRE,{sales,expenses}),
+      tab==="config"&&isAdmin&&React.createElement(Config,{pin,setPin,onLogout:()=>setMode(null),sales,products,expenses,store,setStore})
+    ),
+    React.createElement("div",{className:"bnav"},
+      TABS.map(t=>React.createElement("button",{key:t.id,className:"bnav-item"+(tab===t.id?" active":""),onClick:()=>setTab(t.id)},
+        React.createElement("span",{className:"bnav-icon"},t.icon),
+        React.createElement("span",{className:"bnav-label"},t.label)
+      ))
+    )
+  );
+}
+
+ReactDOM.render(React.createElement(App),document.getElementById("root"));
+</script>
+</body>
+</html>
