@@ -186,16 +186,25 @@ const SUPABASE_URL="https://tvifqqrhjaobahgwyvci.supabase.co";
 const SUPABASE_KEY="sb_publishable_7r-yM1vsRXnjpOwIUS9XTQ_SBXI-yEi";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
+// ── Supabase Lista Diária ─────────────────────────────────────────────────────
+const SB2_URL="https://kotonzsrrxjwbwkaobfc.supabase.co";
+const SB2_KEY="sb_publishable_esXGM4-IdPovwwTLNtb_pA_iL4S6Sbm";
+const sb2=supabase.createClient(SB2_URL,SB2_KEY);
+
 // helpers: converte snake_case do banco para camelCase do app e vice-versa
 const fromDB={
   product:r=>({id:r.id,name:r.name,brand:r.brand,costPrice:r.cost_price,salePrice:r.sale_price,stock:r.stock,minStock:r.min_stock,batteryHealth:r.battery_health||null,color:r.color||"",originalBox:r.original_box||false,condition:r.condition||""}),
   sale:r=>({id:r.id,date:r.date,productId:r.product_id,productName:r.product_name,brand:r.brand,quantity:r.quantity,unitPrice:r.unit_price,costPrice:r.cost_price,discount:r.discount,total:r.total,paymentMethod:r.payment_method,seller:r.seller,avulso:r.avulso,tradeModel:r.trade_model||"",tradeValue:r.trade_value||0,signalValue:r.signal_value||0,remaining:r.remaining||0,deliveryType:r.delivery_type||"Retirada",items:r.items||null,customerName:r.customer_name||"",customerCpf:r.customer_cpf||"",customerBirth:r.customer_birth||"",customerAddress:r.customer_address||"",customerCep:r.customer_cep||"",customerNumber:r.customer_number||"",customerComplement:r.customer_complement||"",customerPhone:r.customer_phone||"",customerEmail:r.customer_email||"",customerType:r.customer_type||""}),
   expense:r=>({id:r.id,date:r.date,description:r.description,category:r.category,value:r.value}),
+  customer:r=>({id:r.id,name:r.name||"",cpf:r.cpf||"",birth:r.birth||"",phone:r.phone||"",email:r.email||"",address:r.address||"",cep:r.cep||"",number:r.number||"",complement:r.complement||"",customerType:r.customer_type||"",notes:r.notes||"",createdAt:r.created_at||""}),
+  catalog:r=>({id:r.id,name:r.name||"",brand:r.brand||"Apple",costPrice:r.cost_price||0,salePrice:r.sale_price||0,color:r.color||"",notes:r.notes||""}),
 };
 const toDB={
   product:p=>({id:p.id,name:p.name,brand:p.brand,cost_price:p.costPrice,sale_price:p.salePrice,stock:p.stock,min_stock:p.minStock,battery_health:p.batteryHealth||null,color:p.color||"",original_box:p.originalBox||false,condition:p.condition||""}),
   sale:s=>({id:s.id,date:s.date,product_id:s.productId,product_name:s.productName,brand:s.brand,quantity:s.quantity,unit_price:s.unitPrice,cost_price:s.costPrice,discount:s.discount,total:s.total,payment_method:s.paymentMethod,seller:s.seller,avulso:s.avulso,trade_model:s.tradeModel||"",trade_value:s.tradeValue||0,signal_value:s.signalValue||0,remaining:s.remaining||0,delivery_type:s.deliveryType||"Retirada",items:s.items||null,customer_name:s.customerName||"",customer_cpf:s.customerCpf||"",customer_birth:s.customerBirth||"",customer_address:s.customerAddress||"",customer_cep:s.customerCep||"",customer_number:s.customerNumber||"",customer_complement:s.customerComplement||"",customer_phone:s.customerPhone||"",customer_email:s.customerEmail||"",customer_type:s.customerType||""}),
   expense:e=>({id:e.id,date:e.date,description:e.description,category:e.category,value:e.value}),
+  customer:c=>({id:c.id,name:c.name,cpf:c.cpf,birth:c.birth,phone:c.phone,email:c.email,address:c.address,cep:c.cep,number:c.number,complement:c.complement,customer_type:c.customerType,notes:c.notes}),
+  catalog:c=>({id:c.id,name:c.name,brand:c.brand,cost_price:c.costPrice,sale_price:c.salePrice,color:c.color,notes:c.notes}),
 };
 
 const BRANDS=["Apple","Garmin","JBL","DJI","Acessórios"];
@@ -216,7 +225,268 @@ const Sheet=({children,onClose})=>React.createElement("div",{className:"overlay"
 const Empty=({icon,text})=>React.createElement("div",{className:"empty"},React.createElement("div",{className:"empty-icon"},icon),React.createElement("div",{className:"empty-text"},text));
 const Syncing=()=>React.createElement("div",{className:"syncing"},React.createElement("div",{className:"spinner"}),React.createElement("span",null,"Salvando..."));
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────────
+// ── LISTA DIÁRIA ──────────────────────────────────────────────────────────────
+function ListaDiaria(){
+  const MAX_SUPPLIERS=8;
+  const DEFAULT_NAMES=["Fornecedor 1","Fornecedor 2","Fornecedor 3","Fornecedor 4","Fornecedor 5","Fornecedor 6","Fornecedor 7","Fornecedor 8"];
+  const[subTab,setSubTab]=useState("lista");
+  const[suppliers,setSuppliers]=useState(Array.from({length:MAX_SUPPLIERS},(_,i)=>({id:i+1,name:DEFAULT_NAMES[i],text:""})));
+  const[activeSupplier,setActiveSupplier]=useState(0);
+  const[result,setResult]=useState("");
+  const[tableData,setTableData]=useState([]);
+  const[loading,setLoading]=useState(false);
+  const[copied,setCopied]=useState(false);
+  const[apiKey,setApiKey]=useState("");
+  const[loadingInit,setLoadingInit]=useState(true);
+  const[savingName,setSavingName]=useState(null);
+
+  // Carrega fornecedores salvos e api_key do sb2
+  useEffect(()=>{
+    const init=async()=>{
+      try{
+        const[{data:sup},{data:cfg}]=await Promise.all([
+          sb2.from("suppliers").select("*").order("id"),
+          sb2.from("config").select("*").eq("key","api_key"),
+        ]);
+        if(sup&&sup.length>0){
+          setSuppliers(prev=>prev.map((s,i)=>{
+            const saved=sup.find(r=>r.id===s.id||(r.position!=null&&r.position===i+1));
+            return saved?{...s,name:saved.name||s.name}:s;
+          }));
+        }
+        if(cfg&&cfg.length>0)setApiKey(cfg[0].value||"");
+      }catch(e){console.warn("Lista Diária init:",e);}
+      setLoadingInit(false);
+    };
+    init();
+  },[]);
+
+  const saveName=async(idx,name)=>{
+    setSavingName(idx);
+    try{
+      await sb2.from("suppliers").upsert({id:idx+1,name,position:idx+1},{onConflict:"id"});
+    }catch(e){console.warn(e);}
+    setSavingName(null);
+  };
+
+  const updateSupplier=(idx,field,val)=>{
+    setSuppliers(prev=>prev.map((s,i)=>i===idx?{...s,[field]:val}:s));
+  };
+
+  const activeSuppliers=suppliers.filter(s=>s.text.trim().length>0);
+
+  const parseTableFromResult=text=>{
+    const lines=text.split("\n");
+    const products={};
+    let currentSupplier=null;
+    const supNames=suppliers.map(s=>s.name);
+
+    lines.forEach(line=>{
+      const trimmed=line.trim();
+      const isSupplierHeader=supNames.some(n=>trimmed.toLowerCase().includes(n.toLowerCase())&&trimmed.length<60);
+      if(isSupplierHeader){
+        currentSupplier=supNames.find(n=>trimmed.toLowerCase().includes(n.toLowerCase()));
+        return;
+      }
+      const priceMatch=trimmed.match(/(.+?)\s+R?\$?\s*([\d.,]+)/);
+      if(priceMatch&&currentSupplier){
+        const pname=priceMatch[1].trim();
+        const price=parseFloat(priceMatch[2].replace(".","").replace(",","."));
+        if(pname&&!isNaN(price)&&price>0){
+          if(!products[pname])products[pname]={prices:[],suppliers:[]};
+          products[pname].prices.push(price);
+          products[pname].suppliers.push(currentSupplier);
+        }
+      }
+    });
+
+    return Object.entries(products).map(([name,{prices,suppliers}])=>{
+      const avg=prices.reduce((a,b)=>a+b,0)/prices.length;
+      return{name,avgCost:avg,salePrice:avg+490,suppliers,prices};
+    }).sort((a,b)=>a.name.localeCompare(b.name));
+  };
+
+  const gerar=async()=>{
+    if(activeSuppliers.length===0)return;
+    if(!apiKey){alert("Chave da API não encontrada no Supabase (config → api_key).");return;}
+    setLoading(true);setResult("");setTableData([]);
+
+    const suppliersText=activeSuppliers.map(s=>`=== ${s.name} ===\n${s.text.trim()}`).join("\n\n");
+
+    const prompt=`Você é um assistente especializado em consolidar listas de preços de fornecedores de eletrônicos.
+
+Recebi as seguintes listas de preços de ${activeSuppliers.length} fornecedor(es):
+
+${suppliersText}
+
+Sua tarefa:
+1. Analise cada lista com cuidado
+2. Para cada produto, identifique o nome e o preço em cada fornecedor
+3. Gere uma LISTA DIÁRIA CONSOLIDADA organizada por fornecedor, com todos os produtos e preços limpos e padronizados
+4. O formato deve ser exatamente:
+
+=== [Nome do Fornecedor] ===
+[Produto] R$ [Preço]
+[Produto] R$ [Preço]
+...
+
+=== [Próximo Fornecedor] ===
+...
+
+Regras importantes:
+- Padronize os nomes dos produtos (remova emojis, caracteres especiais desnecessários)
+- Mantenha os preços exatos como listados por cada fornecedor
+- Ordene os produtos alfabeticamente dentro de cada fornecedor
+- Não adicione comentários, apenas a lista formatada`;
+
+    try{
+      const res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01"},
+        body:JSON.stringify({model:"claude-opus-4-5",max_tokens:4000,messages:[{role:"user",content:prompt}]})
+      });
+      const data=await res.json();
+      if(data.content&&data.content[0]){
+        const text=data.content[0].text;
+        setResult(text);
+        setTableData(parseTableFromResult(text));
+        setSubTab("lista");
+      }else{
+        setResult("Erro ao processar: "+(data.error?.message||"resposta inválida"));
+      }
+    }catch(e){
+      setResult("Erro de conexão: "+e.message);
+    }
+    setLoading(false);
+  };
+
+  const copiar=()=>{
+    navigator.clipboard.writeText(result).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);});
+  };
+
+  const Rf=v=>new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v||0);
+
+  if(loadingInit)return React.createElement("div",{style:{textAlign:"center",padding:"48px 20px",color:"var(--text3)",fontSize:13}},"Carregando Lista Diária...");
+
+  return React.createElement("div",null,
+    // Sub-tabs
+    React.createElement("div",{style:{display:"flex",gap:0,background:"var(--surface2)",borderRadius:12,padding:4,marginBottom:18,width:"fit-content"}},
+      [{id:"lista",label:"Lista Diária"},{id:"tabela",label:"Tabela de Venda"+(tableData.length>0?" ("+tableData.length+")":"")}].map(t=>
+        React.createElement("button",{key:t.id,onClick:()=>setSubTab(t.id),
+          style:{padding:"8px 18px",borderRadius:9,fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:"var(--font)",border:"none",
+            background:subTab===t.id?"linear-gradient(135deg,#C9A84C,#8B6A1F)":  "transparent",
+            color:subTab===t.id?"#000":"var(--text3)",transition:"all .15s"}},t.label)
+      )
+    ),
+
+    // ── ABA LISTA ──
+    subTab==="lista"&&React.createElement("div",null,
+      // Seletor de fornecedores
+      React.createElement("div",{style:{display:"flex",gap:6,flexWrap:"wrap",marginBottom:14}},
+        suppliers.map((s,i)=>React.createElement("button",{key:i,onClick:()=>setActiveSupplier(i),
+          style:{padding:"5px 12px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"var(--font)",border:"1.5px solid",
+            background:activeSupplier===i?"var(--surface)":"transparent",
+            color:activeSupplier===i?"var(--accent2)":"var(--text3)",
+            borderColor:activeSupplier===i?"#C9A84C40":"var(--border2)",
+            position:"relative"}},
+          s.name+(s.text.trim().length>0?" ✓":"")
+        ))
+      ),
+
+      // Painel do fornecedor ativo
+      React.createElement("div",{className:"card",style:{padding:16,marginBottom:14}},
+        React.createElement("div",{style:{display:"flex",gap:8,marginBottom:12,alignItems:"center"}},
+          React.createElement("input",{
+            className:"inp",style:{flex:1,fontWeight:600},
+            value:suppliers[activeSupplier].name,
+            onChange:e=>updateSupplier(activeSupplier,"name",e.target.value),
+            onBlur:e=>saveName(activeSupplier,e.target.value),
+            placeholder:"Nome do fornecedor"
+          }),
+          savingName===activeSupplier&&React.createElement("span",{style:{fontSize:11,color:"var(--text3)"},className:"spinner"})
+        ),
+        React.createElement("textarea",{
+          value:suppliers[activeSupplier].text,
+          onChange:e=>updateSupplier(activeSupplier,"text",e.target.value),
+          placeholder:"Cole aqui a lista de preços do "+suppliers[activeSupplier].name+"...\n\nEx:\niPhone 16 128GB 3.200\nGarmin Fenix 8 4.100\n...",
+          style:{width:"100%",height:220,background:"var(--surface2)",border:"1px solid var(--border2)",borderRadius:10,padding:"11px 13px",fontSize:13,fontFamily:"var(--font)",color:"var(--text)",outline:"none",resize:"vertical",lineHeight:1.7}
+        }),
+        React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginTop:6}},
+          suppliers[activeSupplier].text.trim().length>0
+            ?"✓ "+suppliers[activeSupplier].text.trim().split("\n").filter(l=>l.trim()).length+" linhas preenchidas"
+            :"Vazio"
+        )
+      ),
+
+      // Resumo de fornecedores ativos
+      activeSuppliers.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6,marginBottom:14}},
+        React.createElement("span",{style:{fontSize:12,color:"var(--text3)"}},"Prontos para gerar:"),
+        activeSuppliers.map((s,i)=>React.createElement("span",{key:i,className:"tag",style:{color:"var(--green)",borderColor:"#3DD68C30",background:"#3DD68C10"}},s.name))
+      ),
+
+      // Botão gerar
+      React.createElement("button",{
+        onClick:gerar,disabled:loading||activeSuppliers.length===0,
+        style:{width:"100%",background:loading||activeSuppliers.length===0?"var(--surface2)":"linear-gradient(135deg,#C9A84C,#8B6A1F)",color:loading||activeSuppliers.length===0?"var(--text3)":"#000",border:"none",borderRadius:11,padding:"13px",fontSize:14,fontWeight:700,cursor:loading||activeSuppliers.length===0?"not-allowed":"pointer",fontFamily:"var(--font)",marginBottom:14,display:"flex",alignItems:"center",justifyContent:"center",gap:8}},
+        loading
+          ?React.createElement("div",{style:{display:"flex",alignItems:"center",gap:8}},React.createElement("div",{className:"spinner"}),React.createElement("span",null,"Gerando lista..."))
+          :"⚡  Gerar Lista Consolidada"+(activeSuppliers.length>0?" ("+activeSuppliers.length+" fornecedor"+(activeSuppliers.length>1?"es":"")+")":" — adicione pelo menos 1 lista")
+      ),
+
+      // Resultado
+      result&&React.createElement("div",{className:"card",style:{overflow:"hidden"}},
+        React.createElement("div",{style:{padding:"12px 16px",borderBottom:"1px solid var(--border)",display:"flex",justifyContent:"space-between",alignItems:"center"}},
+          React.createElement("span",{style:{fontSize:13,fontWeight:700,color:"var(--text)"}},"Lista Consolidada"),
+          React.createElement("div",{style:{display:"flex",gap:8}},
+            React.createElement("button",{onClick:copiar,
+              style:{background:copied?"#3DD68C20":"var(--surface2)",border:"1px solid "+(copied?"#3DD68C40":"var(--border2)"),borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,color:copied?"var(--green)":"var(--text2)",cursor:"pointer",fontFamily:"var(--font)"}},
+              copied?"✓ Copiado!":"📋 Copiar"
+            ),
+            tableData.length>0&&React.createElement("button",{onClick:()=>setSubTab("tabela"),
+              style:{background:"#C9A84C15",border:"1px solid #C9A84C30",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:700,color:"var(--accent2)",cursor:"pointer",fontFamily:"var(--font)"}},
+              "Ver Tabela →"
+            )
+          )
+        ),
+        React.createElement("pre",{style:{padding:"14px 16px",fontSize:12,fontFamily:"var(--mono)",color:"var(--text)",lineHeight:1.8,whiteSpace:"pre-wrap",wordBreak:"break-word",background:"var(--surface2)",margin:0,maxHeight:420,overflowY:"auto"}},result)
+      )
+    ),
+
+    // ── ABA TABELA DE VENDA ──
+    subTab==="tabela"&&React.createElement("div",null,
+      tableData.length===0
+        ?React.createElement("div",{className:"card"},
+            React.createElement(Empty,{icon:"📊",text:"Gere uma lista primeiro para ver a tabela de preços"})
+          )
+        :React.createElement("div",null,
+            React.createElement("div",{style:{fontSize:12,color:"var(--text3)",marginBottom:12}},
+              "Média de custo entre fornecedores + R$ 490 = preço de venda sugerido · "+tableData.length+" produtos"
+            ),
+            React.createElement("div",{className:"card"},
+              // Header
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr auto auto",gap:0,padding:"10px 16px",background:"var(--surface2)",borderBottom:"1px solid var(--border)",fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".07em"}},
+                React.createElement("span",null,"Produto"),
+                React.createElement("span",{style:{textAlign:"right",minWidth:90}},"Custo Médio"),
+                React.createElement("span",{style:{textAlign:"right",minWidth:90}},"Venda (+490)")
+              ),
+              tableData.map((p,i)=>React.createElement("div",{key:i,
+                style:{display:"grid",gridTemplateColumns:"1fr auto auto",gap:0,padding:"11px 16px",borderBottom:i<tableData.length-1?"1px solid var(--border)":"none",alignItems:"center"}},
+                React.createElement("div",null,
+                  React.createElement("div",{style:{fontSize:13,fontWeight:600,color:"var(--text)"}},p.name),
+                  React.createElement("div",{style:{fontSize:10,color:"var(--text3)",marginTop:2}},
+                    p.suppliers.join(" · ")+(p.prices.length>1?" ("+p.prices.length+" cotações)":"")
+                  )
+                ),
+                React.createElement("div",{style:{textAlign:"right",minWidth:90,fontFamily:"var(--mono)",fontSize:13,color:"var(--text3)"}},Rf(p.avgCost)),
+                React.createElement("div",{style:{textAlign:"right",minWidth:90,fontFamily:"var(--mono)",fontSize:14,fontWeight:700,color:"var(--accent2)"}},Rf(p.salePrice))
+              ))
+            )
+          )
+    )
+  );
+}
+
+
 function Login({onAdmin,onSeller,storedPin}){
   const[pin,setPin]=useState("");const[err,setErr]=useState(false);
   const tryPin=()=>{if(pin===(storedPin||DEFAULT_PIN)){onAdmin();}else{setErr(true);setPin("");setTimeout(()=>setErr(false),1600);}};
@@ -246,6 +516,8 @@ function Dashboard({products,sales,expenses,setTab}){
   const m=nowMonth(),mS=sales.filter(s=>s.date.startsWith(m));
   const receita=mS.reduce((a,s)=>a+s.total,0),cmv=mS.reduce((a,s)=>a+s.costPrice*s.quantity,0),lb=receita-cmv;
   const desp=expenses.filter(e=>e.date.startsWith(m)).reduce((a,e)=>a+e.value,0),ll=lb-desp;
+  const avgProfit=mS.length>0?(mS.reduce((a,s)=>a+(s.total-s.costPrice*s.quantity),0)/mS.length):0;
+  const ticketMedio=mS.length>0?receita/mS.length:0;
   const lowStock=products.filter(p=>p.stock<=(p.minStock||2));
   const totalEstoqueVenda=products.reduce((a,p)=>a+p.salePrice*p.stock,0);
   const totalEstoqueCusto=products.reduce((a,p)=>a+p.costPrice*p.stock,0);
@@ -255,6 +527,19 @@ function Dashboard({products,sales,expenses,setTab}){
       React.createElement("div",{className:"kpi green"},React.createElement("div",{className:"kpi-label"},"Lucro Bruto"),React.createElement("div",{className:"kpi-value"},R(lb)),React.createElement("div",{className:"kpi-sub"},receita>0?"Margem "+(lb/receita*100).toFixed(1)+"%":"—")),
       React.createElement("div",{className:"kpi amber"},React.createElement("div",{className:"kpi-label"},"Despesas"),React.createElement("div",{className:"kpi-value"},R(desp))),
       React.createElement("div",{className:`kpi ${ll>=0?"green":"red"}`},React.createElement("div",{className:"kpi-label"},"Lucro Líquido"),React.createElement("div",{className:"kpi-value"},R(ll)),React.createElement("div",{className:"kpi-sub"},receita>0?"Margem "+(ll/receita*100).toFixed(1)+"%":"—"))
+    ),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}},
+      React.createElement("div",{className:"kpi",style:{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:13,padding:"14px 16px"}},
+        React.createElement("div",{className:"kpi-label"},"Ticket Médio"),
+        React.createElement("div",{style:{fontSize:19,fontWeight:700,fontFamily:"var(--mono)",letterSpacing:"-.5px",color:"var(--text)"}},R(ticketMedio)),
+        React.createElement("div",{className:"kpi-sub"},mS.length+" venda"+(mS.length!==1?"s":""))
+      ),
+      React.createElement("div",{className:"kpi",style:{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:13,padding:"14px 16px",position:"relative",overflow:"hidden"}},
+        React.createElement("div",{style:{position:"absolute",top:0,left:0,right:0,height:2,background:"linear-gradient(90deg,var(--accent),transparent)"}}),
+        React.createElement("div",{className:"kpi-label"},"Lucro Médio/Venda"),
+        React.createElement("div",{style:{fontSize:19,fontWeight:700,fontFamily:"var(--mono)",letterSpacing:"-.5px",color:"var(--accent2)"}},R(avgProfit)),
+        React.createElement("div",{className:"kpi-sub"},avgProfit>0&&receita>0?"Margem "+(avgProfit/ticketMedio*100).toFixed(1)+"%":"—")
+      )
     ),
     React.createElement("div",{style:{background:"var(--surface)",border:"1px solid var(--border)",borderRadius:13,padding:"14px 16px",marginBottom:14}},
       React.createElement("div",{style:{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".07em",marginBottom:10}},"Estoque em Loja"),
@@ -413,12 +698,12 @@ function Estoque({products,onSave,onDelete,isAdmin,syncing}){
 }
 
 // ── NOVA VENDA ────────────────────────────────────────────────────────────────
-function NovaVenda({products,onSaveSale,onUpdateStock,syncing}){
+function NovaVenda({products,onSaveSale,onUpdateStock,syncing,catalog}){
   // ── estado do item sendo adicionado
   const[tipo,setTipo]=useState("estoque");
   const[search,setSearch]=useState("");const[selId,setSelId]=useState("");
   const[avName,setAvName]=useState("");const[avBrand,setAvBrand]=useState("Apple");
-  const[avCost,setAvCost]=useState("");const[avSale,setAvSale]=useState("");
+  const[avCost,setAvCost]=useState("");const[avSale,setAvSale]=useState("");const[avColor,setAvColor]=useState("");
   const[qty,setQty]=useState("1");const[disc,setDisc]=useState("0");
 
   // ── carrinho de itens
@@ -454,12 +739,13 @@ function NovaVenda({products,onSaveSale,onUpdateStock,syncing}){
       productId:tipo==="estoque"?prod.id:null,
       productName:tipo==="estoque"?prod.name:avName,
       brand:tipo==="estoque"?prod.brand:avBrand,
+      color:tipo==="avulso"?avColor:"",
       quantity:q,unitPrice,costPrice,discount:d,
       subtotal:itemSubtotal,avulso:tipo==="avulso",
     };
     setCart(c=>[...c,item]);
     setSearch("");setSelId("");setQty("1");setDisc("0");
-    setAvName("");setAvCost("");setAvSale("");setTipo("estoque");
+    setAvName("");setAvCost("");setAvSale("");setAvColor("");setTipo("estoque");
   };
 
   const removeItem=id=>setCart(c=>c.filter(x=>x.id!==id));
@@ -560,12 +846,22 @@ function NovaVenda({products,onSaveSale,onUpdateStock,syncing}){
         ),
         tipo==="avulso"&&React.createElement("div",{className:"form-group"},
           React.createElement("div",{className:"info-box info-orange"},"✏️  Não deduz do estoque"),
+          catalog&&catalog.length>0&&React.createElement("div",null,
+            React.createElement("div",{className:"field-label"},"Catálogo Rápido"),
+            React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:6}},
+              catalog.map(c=>React.createElement("button",{key:c.id,type:"button",
+                style:{padding:"5px 11px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"var(--font)",border:"1px solid var(--border2)",background:"var(--surface2)",color:"var(--text2)"},
+                onClick:()=>{setAvName(c.name);setAvBrand(c.brand);setAvCost(String(c.costPrice));setAvSale(String(c.salePrice));if(c.color)setAvColor(c.color);}
+              },c.name))
+            )
+          ),
           React.createElement(Inp,{label:"Nome do Produto",value:avName,onChange:e=>setAvName(e.target.value),placeholder:"Ex: iPhone 16 Pro 256GB"}),
           React.createElement(Sel,{label:"Marca",value:avBrand,onChange:e=>setAvBrand(e.target.value)},BRANDS.map(b=>React.createElement("option",{key:b},b))),
           React.createElement("div",{className:"grid2"},
             React.createElement(Inp,{label:"Custo (R$)",type:"number",value:avCost,onChange:e=>setAvCost(e.target.value),placeholder:"0,00"}),
             React.createElement(Inp,{label:"Venda (R$)",type:"number",value:avSale,onChange:e=>setAvSale(e.target.value),placeholder:"0,00"})
           ),
+          React.createElement(Inp,{label:"Cor (opcional)",value:avColor,onChange:e=>setAvColor(e.target.value),placeholder:"Ex: Preto, Rosa, Azul..."}),
           avCost&&avSale&&+avSale>0&&React.createElement("div",{className:"margin-preview"},
             React.createElement("span",null,"Margem: ",React.createElement("strong",null,((+avSale-+avCost)/+avSale*100).toFixed(1)+"%")),
             React.createElement("span",null,"Lucro un.: ",React.createElement("strong",null,R(+avSale-+avCost)))
@@ -948,7 +1244,216 @@ function DRE({sales,expenses}){
   );
 }
 
-// ── CONFIG ────────────────────────────────────────────────────────────────────
+// ── CLIENTES ──────────────────────────────────────────────────────────────────
+function Clientes({customers,onSave,onDelete,syncing,sales}){
+  const[search,setSearch]=useState("");const[show,setShow]=useState(false);const[editing,setEditing]=useState(null);const[viewSales,setViewSales]=useState(false);
+  const f0={name:"",cpf:"",birth:"",phone:"",email:"",address:"",cep:"",number:"",complement:"",customerType:"",notes:""};
+  const[form,setForm]=useState(f0);
+
+  const list=[...customers].filter(c=>!search||c.name.toLowerCase().includes(search.toLowerCase())||c.phone.includes(search)||c.cpf.includes(search)).sort((a,b)=>a.name.localeCompare(b.name));
+
+  const getSalesForCustomer=c=>{
+    if(!c)return[];
+    return [...sales].filter(s=>
+      (c.name&&s.customerName&&s.customerName.toLowerCase()===c.name.toLowerCase())||
+      (c.cpf&&s.customerCpf&&s.customerCpf===c.cpf)||
+      (c.phone&&s.customerPhone&&s.customerPhone===c.phone)
+    ).reverse();
+  };
+
+  const openAdd=()=>{setForm(f0);setEditing(null);setViewSales(false);setShow(true);};
+  const openEdit=c=>{setForm({...c});setEditing(c.id);setViewSales(false);setShow(true);};
+  const save=async()=>{
+    if(!form.name)return;
+    const c={...form,id:editing||uid()};
+    await onSave(c);setShow(false);
+  };
+
+  const TYPES=["Cliente Novo","Já Cliente","Indicação"];
+  const currentCustomer=editing?customers.find(c=>c.id===editing):null;
+  const customerSales=getSalesForCustomer(currentCustomer);
+  const totalGasto=customerSales.reduce((a,s)=>a+s.total,0);
+  const totalLucro=customerSales.reduce((a,s)=>a+(s.total-s.costPrice*s.quantity),0);
+
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",gap:10,marginBottom:12,alignItems:"center"}},
+      React.createElement("input",{className:"inp",value:search,onChange:e=>setSearch(e.target.value),placeholder:"Buscar por nome, telefone ou CPF...",style:{flex:1}}),
+      React.createElement("button",{onClick:openAdd,style:{background:"linear-gradient(135deg,#C9A84C,#8B6A1F)",color:"#000",border:"none",borderRadius:9,padding:"10px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"var(--font)",flexShrink:0}},"+ Cliente")
+    ),
+    React.createElement("div",{style:{fontSize:12,color:"var(--text3)",marginBottom:10}},list.length+" cliente"+(list.length!==1?"s":"")),
+    React.createElement("div",{className:"card"},
+      list.length===0?React.createElement(Empty,{icon:"👤",text:search?"Nenhum cliente encontrado":"Nenhum cliente cadastrado"}):
+      React.createElement("div",null,list.map((c,i)=>{
+        const cs=getSalesForCustomer(c);
+        return React.createElement("div",{key:c.id,className:"row",onClick:()=>openEdit(c),style:{cursor:"pointer",alignItems:"flex-start"}},
+          React.createElement("div",{style:{flex:1,minWidth:0}},
+            React.createElement("div",{style:{fontSize:14,fontWeight:600,color:"var(--text)",marginBottom:3}},c.name),
+            React.createElement("div",{style:{fontSize:11,color:"var(--text3)"}},[c.phone,c.email,c.cpf].filter(Boolean).join(" · ")),
+            React.createElement("div",{style:{display:"flex",gap:5,marginTop:5,flexWrap:"wrap"}},
+              c.customerType&&React.createElement("span",{className:"tag",style:{color:"var(--accent2)",borderColor:"#C9A84C30",background:"#C9A84C10"}},c.customerType),
+              cs.length>0&&React.createElement("span",{className:"tag",style:{color:"var(--blue)",borderColor:"#4A8BFF30",background:"#4A8BFF10"}},cs.length+" compra"+(cs.length!==1?"s":"")),
+              cs.length>0&&React.createElement("span",{className:"tag",style:{color:"var(--green)",borderColor:"#3DD68C30",background:"#3DD68C10"}},R(cs.reduce((a,s)=>a+s.total,0)))
+            )
+          ),
+          React.createElement("button",{onClick:e=>{e.stopPropagation();onDelete("customers",c.id);},style:{color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"0 4px",flexShrink:0}},"×")
+        );
+      }))
+    ),
+    show&&React.createElement(Sheet,{onClose:()=>setShow(false)},
+      /* Tabs internas */
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}},
+        React.createElement("div",{style:{display:"flex",gap:0,background:"var(--surface2)",borderRadius:10,padding:3}},
+          React.createElement("button",{onClick:()=>setViewSales(false),style:{padding:"6px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"var(--font)",border:"none",background:!viewSales?"var(--surface)":"transparent",color:!viewSales?"var(--text)":"var(--text3)"}},"Dados"),
+          editing&&React.createElement("button",{onClick:()=>setViewSales(true),style:{padding:"6px 14px",borderRadius:8,fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"var(--font)",border:"none",background:viewSales?"var(--surface)":"transparent",color:viewSales?"var(--accent2)":"var(--text3)"}},
+            "Compras"+(customerSales.length>0?" ("+customerSales.length+")":"")
+          )
+        ),
+        editing&&React.createElement("button",{onClick:async()=>{await onDelete("customers",editing);setShow(false);},style:{color:"var(--red)",background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"var(--font)"}},"Remover")
+      ),
+
+      /* Vista de compras */
+      viewSales&&React.createElement("div",null,
+        customerSales.length===0
+          ? React.createElement(Empty,{icon:"🛍️",text:"Nenhuma compra vinculada a este cliente"})
+          : React.createElement("div",null,
+              React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:14}},
+                React.createElement("div",{style:{background:"var(--surface2)",borderRadius:10,padding:"12px",textAlign:"center"}},
+                  React.createElement("div",{style:{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}},"Compras"),
+                  React.createElement("div",{style:{fontSize:18,fontWeight:700,color:"var(--blue)",fontFamily:"var(--mono)"}},customerSales.length)
+                ),
+                React.createElement("div",{style:{background:"var(--surface2)",borderRadius:10,padding:"12px",textAlign:"center"}},
+                  React.createElement("div",{style:{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}},"Total Gasto"),
+                  React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"var(--accent2)",fontFamily:"var(--mono)"}},R(totalGasto))
+                ),
+                React.createElement("div",{style:{background:"var(--surface2)",borderRadius:10,padding:"12px",textAlign:"center"}},
+                  React.createElement("div",{style:{fontSize:10,fontWeight:700,color:"var(--text3)",textTransform:"uppercase",letterSpacing:".06em",marginBottom:4}},"Lucro"),
+                  React.createElement("div",{style:{fontSize:14,fontWeight:700,color:"var(--green)",fontFamily:"var(--mono)"}},R(totalLucro))
+                )
+              ),
+              React.createElement("div",{className:"card"},
+                customerSales.map((s,i)=>React.createElement("div",{key:s.id,style:{padding:"11px 14px",borderBottom:i<customerSales.length-1?"1px solid var(--border)":"none"}},
+                  React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+                    React.createElement("div",{style:{flex:1,minWidth:0}},
+                      React.createElement("div",{style:{fontSize:13,fontWeight:600,color:"var(--text)"}},
+                        s.items&&s.items.length>1?s.items.length+" produtos":s.productName
+                      ),
+                      s.items&&s.items.length>1&&React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginTop:2}},
+                        s.items.map(it=>it.productName+(it.quantity>1?" ×"+it.quantity:"")).join(" · ")
+                      ),
+                      React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginTop:2}},
+                        Dt(s.date)+" · "+s.paymentMethod
+                      )
+                    ),
+                    React.createElement("div",{style:{textAlign:"right",marginLeft:10,flexShrink:0}},
+                      React.createElement("div",{style:{fontSize:14,fontWeight:700,fontFamily:"var(--mono)",color:"var(--text)"}},R(s.total)),
+                      React.createElement("div",{style:{fontSize:11,color:"var(--green)",fontFamily:"var(--mono)"}},"+"+R(s.total-s.costPrice*s.quantity))
+                    )
+                  )
+                ))
+              )
+            )
+      ),
+
+      /* Vista de dados */
+      !viewSales&&React.createElement("div",{className:"form-group"},
+        React.createElement("div",null,
+          React.createElement("div",{className:"field-label"},"Tipo de Cliente"),
+          React.createElement("div",{style:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:6}},
+            TYPES.map(t=>React.createElement("button",{key:t,type:"button",
+              style:{padding:"9px 6px",borderRadius:9,fontFamily:"var(--font)",fontWeight:600,fontSize:11,cursor:"pointer",border:"1.5px solid",background:form.customerType===t?"#C9A84C15":"transparent",color:form.customerType===t?"var(--accent2)":"var(--text3)",borderColor:form.customerType===t?"#C9A84C40":"var(--border2)"},
+              onClick:()=>setForm({...form,customerType:form.customerType===t?"":t})},t))
+          )
+        ),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Nome *",value:form.name,onChange:e=>setForm({...form,name:e.target.value}),placeholder:"Nome completo"}),
+          React.createElement(Inp,{label:"Telefone",value:form.phone,onChange:e=>setForm({...form,phone:e.target.value}),placeholder:"(51) 99999-9999"})
+        ),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"CPF",value:form.cpf,onChange:e=>setForm({...form,cpf:e.target.value}),placeholder:"000.000.000-00"}),
+          React.createElement(Inp,{label:"Nascimento",type:"date",value:form.birth,onChange:e=>setForm({...form,birth:e.target.value})})
+        ),
+        React.createElement(Inp,{label:"E-mail",type:"email",value:form.email,onChange:e=>setForm({...form,email:e.target.value}),placeholder:"email@exemplo.com"}),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"CEP",value:form.cep,onChange:e=>setForm({...form,cep:e.target.value}),placeholder:"00000-000"}),
+          React.createElement(Inp,{label:"Número",value:form.number,onChange:e=>setForm({...form,number:e.target.value}),placeholder:"123"})
+        ),
+        React.createElement(Inp,{label:"Endereço",value:form.address,onChange:e=>setForm({...form,address:e.target.value}),placeholder:"Rua, bairro, cidade"}),
+        React.createElement(Inp,{label:"Complemento",value:form.complement,onChange:e=>setForm({...form,complement:e.target.value}),placeholder:"Apto, bloco..."}),
+        React.createElement(Inp,{label:"Observações",value:form.notes,onChange:e=>setForm({...form,notes:e.target.value}),placeholder:"Ex: cliente VIP, prefere WhatsApp..."}),
+        React.createElement("button",{className:"btn-primary",onClick:save,disabled:!form.name||syncing},"Salvar Cliente")
+      )
+    )
+  );
+}
+
+// ── CATÁLOGO ──────────────────────────────────────────────────────────────────
+function Catalogo({catalog,onSave,onDelete,syncing}){
+  const[show,setShow]=useState(false);const[editing,setEditing]=useState(null);
+  const f0={name:"",brand:"Apple",costPrice:"",salePrice:"",color:"",notes:""};
+  const[form,setForm]=useState(f0);
+  const mg=c=>c.salePrice>0?((c.salePrice-c.costPrice)/c.salePrice*100):0;
+
+  const openAdd=()=>{setForm(f0);setEditing(null);setShow(true);};
+  const openEdit=c=>{setForm({...c,costPrice:String(c.costPrice),salePrice:String(c.salePrice)});setEditing(c.id);setShow(true);};
+  const save=async()=>{
+    if(!form.name||!form.costPrice||!form.salePrice)return;
+    const c={...form,id:editing||uid(),costPrice:+form.costPrice,salePrice:+form.salePrice};
+    await onSave(c);setShow(false);
+  };
+
+  const grouped=BRANDS.reduce((acc,b)=>{acc[b]=catalog.filter(c=>c.brand===b);return acc;},{});
+
+  return React.createElement("div",null,
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}},
+      React.createElement("div",{style:{fontSize:12,color:"var(--text3)"}},"Produtos que você vende com frequência — aparecem como atalho na venda avulsa"),
+      React.createElement("button",{onClick:openAdd,style:{background:"linear-gradient(135deg,#C9A84C,#8B6A1F)",color:"#000",border:"none",borderRadius:9,padding:"8px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"var(--font)",flexShrink:0}},"+ Produto")
+    ),
+    BRANDS.map(b=>{
+      const items=grouped[b];
+      if(!items||items.length===0)return null;
+      return React.createElement("div",{key:b,style:{marginBottom:14}},
+        React.createElement("div",{style:{fontSize:10,fontWeight:700,color:BRAND_COLORS[b]||"#888",textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}},b),
+        React.createElement("div",{className:"card"},
+          items.map((c,i)=>React.createElement("div",{key:c.id,className:"row",onClick:()=>openEdit(c),style:{cursor:"pointer"}},
+            React.createElement("div",{style:{flex:1,minWidth:0}},
+              React.createElement("div",{style:{fontSize:13,fontWeight:600,color:"var(--text)"}},c.name),
+              React.createElement("div",{style:{fontSize:11,color:"var(--text3)",marginTop:2}},
+                R(c.costPrice)+" → "+R(c.salePrice),
+                React.createElement("span",{style:{color:mg(c)>=20?"var(--green)":"var(--orange)",fontWeight:600,marginLeft:6}},mg(c).toFixed(1)+"%"),
+                c.color?React.createElement("span",{style:{marginLeft:6}},"· "+c.color):null
+              )
+            ),
+            React.createElement("button",{onClick:e=>{e.stopPropagation();onDelete("catalog",c.id);},style:{color:"var(--text3)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:"0 4px"}},"×")
+          ))
+        )
+      );
+    }),
+    catalog.length===0&&React.createElement(Empty,{icon:"📋",text:"Nenhum produto no catálogo"}),
+    show&&React.createElement(Sheet,{onClose:()=>setShow(false)},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        React.createElement("div",{className:"sheet-title"},editing?"Editar":"Novo Produto no Catálogo"),
+        editing&&React.createElement("button",{onClick:async()=>{await onDelete("catalog",editing);setShow(false);},style:{color:"var(--red)",background:"none",border:"none",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"var(--font)"}},"Remover")
+      ),
+      React.createElement("div",{className:"form-group"},
+        React.createElement(Inp,{label:"Nome do Produto",value:form.name,onChange:e=>setForm({...form,name:e.target.value}),placeholder:"Ex: Capa iPhone 16 Silicone"}),
+        React.createElement(Sel,{label:"Marca",value:form.brand,onChange:e=>setForm({...form,brand:e.target.value})},BRANDS.map(b=>React.createElement("option",{key:b},b))),
+        React.createElement("div",{className:"grid2"},
+          React.createElement(Inp,{label:"Custo (R$)",type:"number",value:form.costPrice,onChange:e=>setForm({...form,costPrice:e.target.value}),placeholder:"0,00"}),
+          React.createElement(Inp,{label:"Venda (R$)",type:"number",value:form.salePrice,onChange:e=>setForm({...form,salePrice:e.target.value}),placeholder:"0,00"})
+        ),
+        React.createElement(Inp,{label:"Cor padrão (opcional)",value:form.color,onChange:e=>setForm({...form,color:e.target.value}),placeholder:"Ex: Preto"}),
+        React.createElement(Inp,{label:"Observações",value:form.notes,onChange:e=>setForm({...form,notes:e.target.value}),placeholder:"Notas internas..."}),
+        form.costPrice&&form.salePrice&&+form.salePrice>0&&React.createElement("div",{className:"margin-preview"},
+          React.createElement("span",null,"Margem: ",React.createElement("strong",null,((+form.salePrice-+form.costPrice)/+form.salePrice*100).toFixed(1)+"%")),
+          React.createElement("span",null,"Lucro un.: ",React.createElement("strong",null,R(+form.salePrice-+form.costPrice)))
+        ),
+        React.createElement("button",{className:"btn-primary",onClick:save,disabled:!form.name||syncing},"Salvar no Catálogo")
+      )
+    )
+  );
+}
+
+
 function Config({pin,setPin,onLogout,sales,products,expenses,store,setStore}){
   const[nPin,setNPin]=useState("");const[conf,setConf]=useState("");const[msg,setMsg]=useState("");
   const[storeForm,setStoreForm]=useState(store);const[storeMsg,setStoreMsg]=useState("");
@@ -1063,39 +1568,57 @@ function Config({pin,setPin,onLogout,sales,products,expenses,store,setStore}){
 function App(){
   const[mode,setMode]=useState(null);const[tab,setTab]=useState("dashboard");
   const[products,setProducts]=useState([]);const[sales,setSales]=useState([]);const[expenses,setExpenses]=useState([]);
+  const[customers,setCustomers]=useState([]);const[catalog,setCatalog]=useState([]);
   const[pin,setPin]=useState(DEFAULT_PIN);const[ready,setReady]=useState(false);const[syncing,setSyncing]=useState(false);
   const[store,setStore]=useState({name:"FIRST PHONES LTDA",cnpj:"50.692.681/0001-74",address:"Av. Getúlio Vargas, 4831 — Sala 1105, Torre Medical — Canoas/RS",phone:"(51) 98907-6538",email:"firstgarmin@gmail.com"});
 
   // Carrega dados do Supabase
   useEffect(()=>{
     const load=async()=>{
-      const[{data:p},{data:s},{data:e},{data:cfg}]=await Promise.all([
-        sb.from("products").select("*").order("name"),
-        sb.from("sales").select("*").order("date"),
-        sb.from("expenses").select("*").order("date"),
-        sb.from("config").select("*"),
-      ]);
-      if(p)setProducts(p.map(fromDB.product));
-      if(s)setSales(s.map(fromDB.sale));
-      if(e)setExpenses(e.map(fromDB.expense));
-      if(cfg){
-        const pinRow=cfg.find(r=>r.key==="pin");if(pinRow)setPin(pinRow.value);
-        const storeRow=cfg.find(r=>r.key==="store");if(storeRow){try{setStore(JSON.parse(storeRow.value));}catch{}}
+      try{
+        const[{data:p},{data:s},{data:e},{data:cfg},{data:cust},{data:cat}]=await Promise.all([
+          sb.from("products").select("*").order("name"),
+          sb.from("sales").select("*").order("date"),
+          sb.from("expenses").select("*").order("date"),
+          sb.from("config").select("*"),
+          sb.from("customers").select("*").order("name"),
+          sb.from("catalog").select("*").order("name"),
+        ]);
+        if(p)setProducts(p.map(fromDB.product));
+        if(s)setSales(s.map(fromDB.sale));
+        if(e)setExpenses(e.map(fromDB.expense));
+        if(cust)setCustomers(cust.map(fromDB.customer));
+        if(cat)setCatalog(cat.map(fromDB.catalog));
+        if(cfg){
+          const pinRow=cfg.find(r=>r.key==="pin");if(pinRow)setPin(pinRow.value);
+          const storeRow=cfg.find(r=>r.key==="store");if(storeRow){try{setStore(JSON.parse(storeRow.value));}catch{}}
+        }
+      }catch(err){
+        console.warn("Erro ao carregar dados:",err.message);
       }
       setReady(true);
     };
     load();
   },[]);
 
-  // Escuta mudanças em tempo real
+  // Escuta mudanças em tempo real (graceful — falha silenciosa se WebSocket não disponível)
   useEffect(()=>{
     if(!ready)return;
-    const ch=sb.channel("first-realtime")
-      .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>sb.from("products").select("*").order("name").then(({data})=>{if(data)setProducts(data.map(fromDB.product));}))
-      .on("postgres_changes",{event:"*",schema:"public",table:"sales"},()=>sb.from("sales").select("*").order("date").then(({data})=>{if(data)setSales(data.map(fromDB.sale));}))
-      .on("postgres_changes",{event:"*",schema:"public",table:"expenses"},()=>sb.from("expenses").select("*").order("date").then(({data})=>{if(data)setExpenses(data.map(fromDB.expense));}))
-      .subscribe();
-    return()=>sb.removeChannel(ch);
+    let ch=null;
+    try{
+      ch=sb.channel("first-realtime")
+        .on("postgres_changes",{event:"*",schema:"public",table:"products"},()=>sb.from("products").select("*").order("name").then(({data})=>{if(data)setProducts(data.map(fromDB.product));}))
+        .on("postgres_changes",{event:"*",schema:"public",table:"sales"},()=>sb.from("sales").select("*").order("date").then(({data})=>{if(data)setSales(data.map(fromDB.sale));}))
+        .on("postgres_changes",{event:"*",schema:"public",table:"expenses"},()=>sb.from("expenses").select("*").order("date").then(({data})=>{if(data)setExpenses(data.map(fromDB.expense));}))
+        .on("postgres_changes",{event:"*",schema:"public",table:"customers"},()=>sb.from("customers").select("*").order("name").then(({data})=>{if(data)setCustomers(data.map(fromDB.customer));}))
+        .on("postgres_changes",{event:"*",schema:"public",table:"catalog"},()=>sb.from("catalog").select("*").order("name").then(({data})=>{if(data)setCatalog(data.map(fromDB.catalog));}))
+        .subscribe((status,err)=>{
+          if(err)console.warn("Realtime unavailable:",err.message);
+        });
+    }catch(e){
+      console.warn("Realtime não disponível neste browser:",e.message);
+    }
+    return()=>{try{if(ch)sb.removeChannel(ch);}catch{}};
   },[ready]);
 
   const withSync=async fn=>{setSyncing(true);try{await fn();}finally{setSyncing(false);}};
@@ -1125,6 +1648,18 @@ function App(){
     if(table==="products")setProducts(p=>p.filter(x=>x.id!==id));
     if(table==="sales")setSales(p=>p.filter(x=>x.id!==id));
     if(table==="expenses")setExpenses(p=>p.filter(x=>x.id!==id));
+    if(table==="customers")setCustomers(p=>p.filter(x=>x.id!==id));
+    if(table==="catalog")setCatalog(p=>p.filter(x=>x.id!==id));
+  });
+
+  const onSaveCustomer=c=>withSync(async()=>{
+    await sb.from("customers").upsert(toDB.customer(c));
+    setCustomers(prev=>{const idx=prev.findIndex(x=>x.id===c.id);return idx>=0?prev.map(x=>x.id===c.id?c:x):[...prev,c];});
+  });
+
+  const onSaveCatalog=c=>withSync(async()=>{
+    await sb.from("catalog").upsert(toDB.catalog(c));
+    setCatalog(prev=>{const idx=prev.findIndex(x=>x.id===c.id);return idx>=0?prev.map(x=>x.id===c.id?c:x):[...prev,c];});
   });
 
   useEffect(()=>{if(mode==="seller")setTab("estoque");if(mode==="admin")setTab("dashboard");},[mode]);
@@ -1134,10 +1669,10 @@ function App(){
 
   const isAdmin=mode==="admin";
   const TABS=isAdmin
-    ?[{id:"dashboard",icon:"◈",label:"Início"},{id:"estoque",icon:"◫",label:"Estoque"},{id:"vendas",icon:"＋",label:"Vender"},{id:"historico",icon:"≡",label:"Vendas"},{id:"despesas",icon:"↓",label:"Despesas"},{id:"dre",icon:"◎",label:"DRE"},{id:"config",icon:"⚙",label:"Config"}]
-    :[{id:"estoque",icon:"◫",label:"Estoque"},{id:"vendas",icon:"＋",label:"Vender"}];
+    ?[{id:"dashboard",icon:"◈",label:"Início"},{id:"estoque",icon:"◫",label:"Estoque"},{id:"vendas",icon:"＋",label:"Vender"},{id:"historico",icon:"≡",label:"Vendas"},{id:"clientes",icon:"◉",label:"Clientes"},{id:"catalogo",icon:"❋",label:"Catálogo"},{id:"lista",icon:"✦",label:"Lista"},{id:"despesas",icon:"↓",label:"Despesas"},{id:"dre",icon:"◎",label:"DRE"},{id:"config",icon:"⚙",label:"Config"}]
+    :[{id:"estoque",icon:"◫",label:"Estoque"},{id:"vendas",icon:"＋",label:"Vender"},{id:"lista",icon:"✦",label:"Lista"}];
 
-  const PAGE_TITLES={dashboard:"Painel",estoque:"Estoque",vendas:"Nova Venda",historico:"Histórico de Vendas",despesas:"Despesas",dre:"DRE",config:"Configurações"};
+  const PAGE_TITLES={dashboard:"Painel",estoque:"Estoque",vendas:"Nova Venda",historico:"Histórico de Vendas",clientes:"Clientes",catalogo:"Catálogo",lista:"Lista Diária",despesas:"Despesas",dre:"DRE",config:"Configurações"};
 
   const Sidebar=()=>React.createElement("div",{className:"sidebar"},
     React.createElement("div",{className:"sidebar-logo"},
@@ -1179,8 +1714,11 @@ function App(){
       React.createElement("div",{className:"page-title"},PAGE_TITLES[tab]||""),
       tab==="dashboard"&&isAdmin&&React.createElement(Dashboard,{products,sales,expenses,setTab}),
       tab==="estoque"&&React.createElement(Estoque,{products,onSave:onSaveProduct,onDelete,isAdmin,syncing}),
-      tab==="vendas"&&React.createElement(NovaVenda,{products,onSaveSale,onUpdateStock,syncing}),
+      tab==="vendas"&&React.createElement(NovaVenda,{products,onSaveSale,onUpdateStock,syncing,catalog}),
       tab==="historico"&&isAdmin&&React.createElement(Historico,{sales,onDelete,store}),
+      tab==="clientes"&&isAdmin&&React.createElement(Clientes,{customers,onSave:onSaveCustomer,onDelete,syncing,sales}),
+      tab==="catalogo"&&isAdmin&&React.createElement(Catalogo,{catalog,onSave:onSaveCatalog,onDelete,syncing}),
+      tab==="lista"&&React.createElement(ListaDiaria),
       tab==="despesas"&&isAdmin&&React.createElement(Despesas,{expenses,onSave:onSaveExpense,onDelete,syncing}),
       tab==="dre"&&isAdmin&&React.createElement(DRE,{sales,expenses}),
       tab==="config"&&isAdmin&&React.createElement(Config,{pin,setPin,onLogout:()=>setMode(null),sales,products,expenses,store,setStore})
